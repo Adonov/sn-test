@@ -1,0 +1,13 @@
+{
+  "name": "Receptko",
+  "short_name": "Receptko",
+  "description": "Recepti, načrt obrokov in nakupovalni seznam na enem mestu.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffaf5",
+  "theme_color": "#e8590c",
+  "lang": "sl",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
