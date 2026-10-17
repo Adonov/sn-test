@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Receptko</string>
-    <string name="title_activity_main">Receptko</string>
-    <string name="package_name">si.receptko.app</string>
-    <string name="custom_url_scheme">si.receptko.app</string>
+    <string name="app_name">Forkful</string>
+    <string name="title_activity_main">Forkful</string>
+    <string name="package_name">com.forkful.app</string>
+    <string name="custom_url_scheme">com.forkful.app</string>
 </resources>

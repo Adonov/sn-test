@@ -41,4 +41,4 @@ createServer((req, res) => {
     res.statusCode = 500;
     res.end('Napaka strežnika');
   });
-}).listen(PORT, () => console.log(`Receptko teče na http://localhost:${PORT}`));
+}).listen(PORT, () => console.log(`Forkful runs at http://localhost:${PORT}`));

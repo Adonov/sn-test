@@ -1,8 +1,8 @@
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { isNative } from './platform';
 
-const STORAGE_KEY = 'receptko-state';
-const FILE = 'receptko-state.json';
+const STORAGE_KEY = 'forkful-state';
+const FILE = 'forkful-state.json';
 
 // In the apps the state lives in a file, because iOS may evict WebView localStorage.
 // Writes are chained so an older snapshot can never overwrite a newer one.

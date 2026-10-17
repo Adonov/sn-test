@@ -1,4 +1,4 @@
-# Receptko 🍲
+# Forkful 🍲
 
 Aplikacija za recepte v slogu [ReciMe](https://www.recime.app/): shrani recepte s spleta in družbenih omrežij,
 načrtuj obroke za cel teden in iz načrta samodejno sestavi nakupovalni seznam.
@@ -41,7 +41,7 @@ Kaj se v aplikacijah razlikuje od spletne različice:
 
 - **Uvoz s povezave deluje brez strežnika** – telefon stran prenese sam (`CapacitorHttp`).
 - **Podatki so shranjeni v datoteki** v prostoru aplikacije (iOS lahko briše podatke brskalnika).
-- **»Deli → Receptko« na Androidu** – povezavo iz Instagrama, TikToka ali brskalnika deliš neposredno v aplikacijo.
+- **»Deli → Forkful« na Androidu** – povezavo iz Instagrama, TikToka ali brskalnika deliš neposredno v aplikacijo.
 - **»Prilepi in uvozi«** – kopirana povezava se uvozi z enim dotikom (tudi na iOS).
 - Zaslon med kuhanjem ostane prižgan, nakupovalni seznam se deli z izvornim menijem »Deli«.
 
@@ -61,7 +61,7 @@ iOS različico za simulator; obe najdeš med »Artifacts« pri posameznem zagonu
 
 ### Objava v trgovinah
 
-1. V `capacitor.config.ts` (ter v Android/iOS projektu) zamenjaj `appId` `si.receptko.app` z ID-jem, ki ga imaš v lasti.
+1. V `capacitor.config.ts` (ter v Android/iOS projektu) zamenjaj `appId` `com.forkful.app` z ID-jem, ki ga imaš v lasti.
 2. **Google Play:** razvijalski račun (25 USD enkratno), v Android Studiu *Build → Generate Signed App Bundle*.
 3. **App Store:** Apple Developer Program (99 USD/leto), v Xcodu nastavi *Signing & Capabilities*, nato
    *Product → Archive* in naloži v App Store Connect.
@@ -69,7 +69,7 @@ iOS različico za simulator; obe najdeš med »Artifacts« pri posameznem zagonu
 
 ### Še ni narejeno
 
-- **»Deli → Receptko« na iOS** zahteva Share Extension, ki jo je treba dodati v Xcodu (vtičnik
+- **»Deli → Forkful« na iOS** zahteva Share Extension, ki jo je treba dodati v Xcodu (vtičnik
   `@capgo/capacitor-share-target` je že nameščen). Do takrat na iOS deluje »Kopiraj povezavo« → »Prilepi in uvozi«.
 - Sinhronizacija med napravami (zahteva uporabniške račune in strežnik).
 

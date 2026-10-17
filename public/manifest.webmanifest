@@ -1,6 +1,6 @@
 {
-  "name": "Receptko",
-  "short_name": "Receptko",
+  "name": "Forkful",
+  "short_name": "Forkful",
   "description": "Recepti, načrt obrokov in nakupovalni seznam na enem mestu.",
   "start_url": "/",
   "display": "standalone",

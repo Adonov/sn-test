@@ -163,7 +163,7 @@ export function ImportPage() {
         <h2>Namig</h2>
         <p className="muted small">
           {isNative
-            ? 'V Instagramu, TikToku ali brskalniku tapni »Deli« → »Kopiraj povezavo«, nato tukaj »Prilepi in uvozi«. Na Androidu lahko izbereš tudi »Deli« → Receptko.'
+            ? 'V Instagramu, TikToku ali brskalniku tapni »Deli« → »Kopiraj povezavo«, nato tukaj »Prilepi in uvozi«. Na Androidu lahko izbereš tudi »Deli« → Forkful.'
             : 'Na telefonu lahko aplikacijo dodaš na začetni zaslon (»Dodaj na začetni zaslon«) in recepte uvažaš kot iz običajne aplikacije.'}
         </p>
       </section>

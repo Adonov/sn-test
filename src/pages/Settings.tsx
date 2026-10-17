@@ -10,7 +10,7 @@ export function Settings() {
     const blob = new Blob([exportBackup()], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `receptko-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `forkful-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   };

@@ -1,4 +1,4 @@
-package si.receptko.app;
+package com.forkful.app;
 
 import com.getcapacitor.BridgeActivity;
 

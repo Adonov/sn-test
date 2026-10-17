@@ -14,7 +14,7 @@ export function BottomNav({ active }: { active: string }) {
   return (
     <nav className="bottom-nav" aria-label="Glavna navigacija">
       <div className="brand">
-        <span aria-hidden>🍲</span> Receptko
+        <span aria-hidden>🍲</span> Forkful
       </div>
       {ITEMS.map((item) => (
         <a key={item.id} href={item.href} className={current === item.id ? 'active' : ''} aria-current={current === item.id ? 'page' : undefined}>

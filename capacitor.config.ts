@@ -2,8 +2,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   // Change to a reverse-domain ID you own before publishing to the App Store / Google Play.
-  appId: 'si.receptko.app',
-  appName: 'Receptko',
+  appId: 'com.forkful.app',
+  appName: 'Forkful',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
