@@ -1,10 +1,9 @@
 import { useSyncExternalStore } from 'react';
 import type { RecipeDraft } from '../../shared/recipeParsing';
 import { addToGroceryList, categorize, newId } from './grocery';
+import { loadSaved, save } from './persistence';
 import { SAMPLE_RECIPES } from './samples';
 import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe } from './types';
-
-const STORAGE_KEY = 'receptko-state';
 
 function initialState(): AppState {
   const now = Date.now();
@@ -16,28 +15,26 @@ function initialState(): AppState {
   };
 }
 
-function load(): AppState {
+let state: AppState = initialState();
+
+/** Loads saved data; must finish before the app renders. */
+export async function initStore(): Promise<void> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = await loadSaved();
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
-      if (parsed.version === 1 && Array.isArray(parsed.recipes)) return parsed;
+      if (parsed.version === 1 && Array.isArray(parsed.recipes)) state = parsed;
     }
   } catch {
-    // Fall through to a fresh state when storage is unavailable or corrupted.
+    // Keep the fresh state when saved data is corrupted.
   }
-  return initialState();
 }
 
-let state: AppState = load();
 const listeners = new Set<() => void>();
 
 function setState(update: (s: AppState) => AppState): void {
   state = update(state);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (err) {
-    console.warn('Shranjevanje ni uspelo', err);
+  if (!save(JSON.stringify(state))) {
     alert('Shramba brskalnika je polna. Odstrani nekaj receptov s fotografijami ali izvozi varnostno kopijo.');
   }
   listeners.forEach((l) => l());
@@ -107,6 +104,21 @@ export function getPendingDraft(): RecipeDraft | undefined {
 
 export function clearPendingDraft(): void {
   pendingDraft = undefined;
+}
+
+// Text or link shared into the app from another app, waiting for the import page.
+let pendingShare: string | undefined;
+
+export function setPendingShare(text: string): void {
+  pendingShare = text;
+}
+
+export function getPendingShare(): string | undefined {
+  return pendingShare;
+}
+
+export function clearPendingShare(): void {
+  pendingShare = undefined;
 }
 
 // ---- Meal plan ----

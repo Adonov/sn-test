@@ -32,7 +32,7 @@ export function App() {
       content = <RecipeEditor key="new" />;
       break;
     case 'import':
-      content = <ImportPage />;
+      content = <ImportPage key={id ?? 'import'} />;
       break;
     case 'planner':
       content = <Planner />;

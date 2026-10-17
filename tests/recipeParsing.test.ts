@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { extractRecipeFromHtml, parseDuration, parseRecipeText, stripSocialWrapper } from '../shared/recipeParsing.js';
+import { findUrl } from '../src/lib/importer';
 import { findTimerSeconds } from '../src/lib/timers';
 
 describe('parseDuration', () => {
@@ -100,5 +101,12 @@ describe('findTimerSeconds', () => {
     ['Dodaj 2 stroka česna', undefined],
   ])('%s', (step, seconds) => {
     expect(findTimerSeconds(step)).toBe(seconds);
+  });
+});
+
+describe('findUrl', () => {
+  it('extracts the link from shared text', () => {
+    expect(findUrl('Poglej ta recept! https://www.instagram.com/reel/abc/?igsh=x.')).toBe('https://www.instagram.com/reel/abc/?igsh=x');
+    expect(findUrl('brez povezave')).toBeUndefined();
   });
 });

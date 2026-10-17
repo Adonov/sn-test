@@ -32,6 +32,47 @@ npm run build    # produkcijska različica v dist/
 npm start        # produkcijski strežnik (PORT, privzeto 3000)
 ```
 
+## Mobilni aplikaciji (iOS in Android)
+
+Aplikacija je s [Capacitorjem](https://capacitorjs.com/) zapakirana v izvorni aplikaciji za iOS (`ios/`) in
+Android (`android/`). Koda je ena sama – spletni del se ob vsaki gradnji skopira v obe aplikaciji.
+
+Kaj se v aplikacijah razlikuje od spletne različice:
+
+- **Uvoz s povezave deluje brez strežnika** – telefon stran prenese sam (`CapacitorHttp`).
+- **Podatki so shranjeni v datoteki** v prostoru aplikacije (iOS lahko briše podatke brskalnika).
+- **»Deli → Receptko« na Androidu** – povezavo iz Instagrama, TikToka ali brskalnika deliš neposredno v aplikacijo.
+- **»Prilepi in uvozi«** – kopirana povezava se uvozi z enim dotikom (tudi na iOS).
+- Zaslon med kuhanjem ostane prižgan, nakupovalni seznam se deli z izvornim menijem »Deli«.
+
+### Gradnja
+
+```bash
+npm install
+npm run android   # zgradi, sinhronizira in odpre projekt v Android Studiu
+npm run ios       # isto za Xcode (potreben je Mac z Xcode 26+)
+```
+
+V Android Studiu / Xcodu nato izbereš napravo ali simulator in pritisneš ▶︎. Po spremembah spletne kode zadošča
+`npm run cap:sync`.
+
+GitHub Actions (`.github/workflows/mobile.yml`) ob vsakem pushu zgradi Android APK (za namestitev na telefon) in
+iOS različico za simulator; obe najdeš med »Artifacts« pri posameznem zagonu.
+
+### Objava v trgovinah
+
+1. V `capacitor.config.ts` (ter v Android/iOS projektu) zamenjaj `appId` `si.receptko.app` z ID-jem, ki ga imaš v lasti.
+2. **Google Play:** razvijalski račun (25 USD enkratno), v Android Studiu *Build → Generate Signed App Bundle*.
+3. **App Store:** Apple Developer Program (99 USD/leto), v Xcodu nastavi *Signing & Capabilities*, nato
+   *Product → Archive* in naloži v App Store Connect.
+4. Obe trgovini zahtevata politiko zasebnosti – aplikacija ne pošilja osebnih podatkov nikamor, vse ostane na napravi.
+
+### Še ni narejeno
+
+- **»Deli → Receptko« na iOS** zahteva Share Extension, ki jo je treba dodati v Xcodu (vtičnik
+  `@capgo/capacitor-share-target` je že nameščen). Do takrat na iOS deluje »Kopiraj povezavo« → »Prilepi in uvozi«.
+- Sinhronizacija med napravami (zahteva uporabniške račune in strežnik).
+
 ## Zgradba
 
 | Mapa | Vsebina |
@@ -40,6 +81,7 @@ npm start        # produkcijski strežnik (PORT, privzeto 3000)
 | `src/lib` | Razčlenjevanje sestavin in porcij, nakupovalni seznam, shramba stanja (localStorage) |
 | `shared/recipeParsing.js` | Prepoznavanje receptov iz HTML (JSON-LD, OpenGraph) in prostega besedila – uporabljata ga strežnik in brskalnik |
 | `server` | `/api/import` (prenos strani z zaščito pred dostopom do zasebnih omrežij) in strežnik za `dist/` |
+| `android`, `ios` | Izvorna projekta (Capacitor) – ikone in zaslon ob zagonu so generirani iz `assets/` |
 | `tests` | Vitest testi za razčlenjevanje, preračun porcij in nakupovalni seznam |
 
 ## Možne nadgradnje

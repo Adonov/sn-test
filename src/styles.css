@@ -118,7 +118,8 @@ textarea {
 .main {
   max-width: 960px;
   margin: 0 auto;
-  padding: 1rem 1rem calc(var(--nav-height) + 2rem + env(safe-area-inset-bottom));
+  padding: calc(1rem + env(safe-area-inset-top)) calc(1rem + env(safe-area-inset-right))
+    calc(var(--nav-height) + 2rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left));
 }
 
 .bottom-nav {
@@ -555,12 +556,13 @@ div.placeholder {
 
 .detail-hero {
   position: relative;
-  margin: -1rem -1rem 1rem;
+  margin: calc(-1rem - env(safe-area-inset-top)) calc(-1rem - env(safe-area-inset-right)) 1rem
+    calc(-1rem - env(safe-area-inset-left));
 }
 
 .hero-image {
   width: 100%;
-  height: 260px;
+  height: calc(260px + env(safe-area-inset-top));
   object-fit: cover;
   display: block;
 }
@@ -582,7 +584,7 @@ div.hero-image.placeholder {
 
 .hero-actions {
   position: absolute;
-  top: 0.75rem;
+  top: calc(0.75rem + env(safe-area-inset-top));
   left: 0.75rem;
   right: 0.75rem;
   display: flex;
@@ -933,7 +935,7 @@ div.hero-image.placeholder {
   flex-direction: column;
   max-width: 760px;
   margin: 0 auto;
-  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  padding: calc(1rem + env(safe-area-inset-top)) 1.25rem calc(1rem + env(safe-area-inset-bottom));
 }
 
 .cook-header {

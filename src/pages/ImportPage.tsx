@@ -1,16 +1,29 @@
-import { useState, type FormEvent } from 'react';
-import { parseRecipeText, type ExtractionMethod, type RecipeDraft } from '../../shared/recipeParsing';
+import { Clipboard } from '@capacitor/clipboard';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { parseRecipeText, type RecipeDraft } from '../../shared/recipeParsing';
+import { findUrl, importRecipeFromUrl } from '../lib/importer';
+import { isNative } from '../lib/platform';
 import { navigate } from '../lib/router';
-import { setPendingDraft } from '../lib/store';
+import { clearPendingShare, getPendingShare, setPendingDraft } from '../lib/store';
 
 type Tab = 'link' | 'text';
 
 const SOCIAL_HOSTS = /(instagram\.com|tiktok\.com|facebook\.com|pinterest\.|youtube\.com|youtu\.be)/i;
 
+async function readClipboard(): Promise<string> {
+  if (isNative) return (await Clipboard.read()).value ?? '';
+  return navigator.clipboard.readText();
+}
+
 export function ImportPage() {
-  const [tab, setTab] = useState<Tab>('link');
-  const [url, setUrl] = useState('');
-  const [text, setText] = useState('');
+  // Content shared from another app: a link is imported right away, other text goes to the text tab.
+  const [shared] = useState(() => {
+    const text = getPendingShare();
+    return text ? { text, url: findUrl(text) } : undefined;
+  });
+  const [tab, setTab] = useState<Tab>(shared && !shared.url ? 'text' : 'link');
+  const [url, setUrl] = useState(shared?.url ?? '');
+  const [text, setText] = useState(shared && !shared.url ? shared.text : '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   // Title/image/source from a link import, merged into a later text import.
@@ -21,18 +34,11 @@ export function ImportPage() {
     navigate('/new');
   };
 
-  const importLink = async (e: FormEvent) => {
-    e.preventDefault();
+  const runImport = async (link: string) => {
     setError(undefined);
     setLoading(true);
     try {
-      const res = await fetch('/api/import', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const data = (await res.json()) as { recipe?: RecipeDraft; method?: ExtractionMethod; error?: string };
-      if (!res.ok || !data.recipe) throw new Error(data.error ?? 'Uvoz ni uspel.');
+      const data = await importRecipeFromUrl(link);
       if (data.method === 'metadata') {
         // Only got a title/photo (typical for TikTok/Instagram): ask for the caption text.
         setError(
@@ -44,10 +50,41 @@ export function ImportPage() {
       }
       review(data.recipe);
     } catch (err) {
-      setError(err instanceof Error && err.message !== 'Failed to fetch' ? err.message : 'Strežnik ni dosegljiv.');
-      if (SOCIAL_HOSTS.test(url)) setTab('text');
+      setError(err instanceof Error ? err.message : 'Uvoz ni uspel.');
+      if (SOCIAL_HOSTS.test(link)) setTab('text');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Import a shared link once, even though StrictMode runs effects twice in development.
+  const sharedHandled = useRef(false);
+  useEffect(() => {
+    clearPendingShare();
+    if (shared?.url && !sharedHandled.current) {
+      sharedHandled.current = true;
+      runImport(shared.url);
+    }
+  }, []);
+
+  const importLink = (e: FormEvent) => {
+    e.preventDefault();
+    runImport(url.trim());
+  };
+
+  const paste = async () => {
+    try {
+      const clip = (await readClipboard()).trim();
+      const link = findUrl(clip);
+      if (tab === 'link' && link) {
+        setUrl(link);
+        runImport(link);
+      } else if (clip) {
+        setTab('text');
+        setText(clip);
+      }
+    } catch {
+      setError('Do odložišča ni bilo mogoče dostopati. Besedilo prilepi ročno.');
     }
   };
 
@@ -89,9 +126,14 @@ export function ImportPage() {
             <span>Povezava</span>
             <input type="url" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" autoFocus />
           </label>
-          <button className="btn primary" disabled={loading}>
-            {loading ? 'Uvažam…' : 'Uvozi'}
-          </button>
+          <div className="action-row">
+            <button className="btn primary" disabled={loading}>
+              {loading ? 'Uvažam…' : 'Uvozi'}
+            </button>
+            <button type="button" className="btn" onClick={paste} disabled={loading}>
+              📋 Prilepi in uvozi
+            </button>
+          </div>
         </form>
       ) : (
         <form className="card" onSubmit={importText}>
@@ -108,15 +150,21 @@ export function ImportPage() {
               placeholder={'Bananin kruh 🍌\n\nSestavine:\n3 zrele banane\n200 g moke\n2 jajci\n\nPostopek:\n1. Banane pretlači.\n2. …'}
             />
           </label>
-          <button className="btn primary">Prepoznaj recept</button>
+          <div className="action-row">
+            <button className="btn primary">Prepoznaj recept</button>
+            <button type="button" className="btn" onClick={paste}>
+              📋 Prilepi
+            </button>
+          </div>
         </form>
       )}
 
       <section className="card tips">
         <h2>Namig</h2>
         <p className="muted small">
-          Na telefonu lahko aplikacijo dodaš na začetni zaslon (»Dodaj na začetni zaslon«) in recepte uvažaš kot iz običajne
-          aplikacije.
+          {isNative
+            ? 'V Instagramu, TikToku ali brskalniku tapni »Deli« → »Kopiraj povezavo«, nato tukaj »Prilepi in uvozi«. Na Androidu lahko izbereš tudi »Deli« → Receptko.'
+            : 'Na telefonu lahko aplikacijo dodaš na začetni zaslon (»Dodaj na začetni zaslon«) in recepte uvažaš kot iz običajne aplikacije.'}
         </p>
       </section>
     </>

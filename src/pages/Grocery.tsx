@@ -1,5 +1,7 @@
+import { Share } from '@capacitor/share';
 import { useState, type FormEvent } from 'react';
 import { CATEGORIES, formatGroceryAmount, groceryListAsText } from '../lib/grocery';
+import { isNative } from '../lib/platform';
 import { addManualGroceryItem, clearGrocery, removeGroceryItem, toggleGroceryItem, updateGroceryItem, useAppState } from '../lib/store';
 
 export function Grocery() {
@@ -18,6 +20,10 @@ export function Grocery() {
 
   const share = async () => {
     const body = groceryListAsText(grocery);
+    if (isNative) {
+      await Share.share({ title: 'Nakupovalni seznam', text: body }).catch(() => {});
+      return;
+    }
     if (navigator.share) {
       await navigator.share({ title: 'Nakupovalni seznam', text: body }).catch(() => {});
       return;

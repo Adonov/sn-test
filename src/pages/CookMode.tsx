@@ -1,6 +1,8 @@
+import { KeepAwake } from '@capacitor-community/keep-awake';
 import { useEffect, useState } from 'react';
 import { isHeading } from '../lib/ingredients';
 import { findTimerSeconds, formatClock } from '../lib/timers';
+import { isNative } from '../lib/platform';
 import type { Recipe } from '../lib/types';
 
 export function CookMode({ recipe }: { recipe: Recipe }) {
@@ -12,6 +14,12 @@ export function CookMode({ recipe }: { recipe: Recipe }) {
 
   // Keep the screen awake while cooking, where supported.
   useEffect(() => {
+    if (isNative) {
+      KeepAwake.keepAwake().catch(() => {});
+      return () => {
+        KeepAwake.allowSleep().catch(() => {});
+      };
+    }
     let lock: WakeLockSentinel | undefined;
     const request = () =>
       navigator.wakeLock
