@@ -19,6 +19,12 @@ načrtuj obroke za cel teden in iz načrta samodejno sestavi nakupovalni seznam.
   razvrstijo po oddelkih trgovine, delijo ali kopirajo.
 - **Brez prijave** – podatki so shranjeni v brskalniku; izvoz/uvoz varnostne kopije v JSON.
 - **PWA** – aplikacijo lahko na telefonu dodaš na začetni zaslon; deluje tudi brez povezave.
+- **8 jezikov** – angleščina, nemščina, španščina, francoščina, italijanščina, portugalščina, slovenščina in hrvaščina.
+  Jezik se izbere po nastavitvah naprave in ga lahko spremeniš v »Več«. Prepoznavanje sestavin, enot (EL, cucharada,
+  c. à soupe …), razdelkov receptov, časovnikov in oddelkov trgovine deluje v vseh teh jezikih. Prevodi so v
+  `src/i18n/locales/`; nov jezik dodaš z novo datoteko po vzoru `en.ts`.
+- **Videi v receptu** – YouTube, TikTok, Instagram Reels, Vimeo ali neposredna povezava do videa se predvajajo
+  znotraj recepta. Pri uvozu se video doda samodejno, če ga stran ali objava vsebuje.
 
 ## Zagon
 

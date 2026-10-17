@@ -1,15 +1,18 @@
 import { useSyncExternalStore } from 'react';
 import type { RecipeDraft } from '../../shared/recipeParsing';
-import { addToGroceryList, categorize, newId } from './grocery';
+import { detectLanguage, type Language } from '../i18n/languages';
+import { addToGroceryList, categorize, newId, toCategoryId } from './grocery';
 import { loadSaved, save } from './persistence';
-import { SAMPLE_RECIPES } from './samples';
+import { SAMPLE_RECIPES_EN, SAMPLE_RECIPES_SL } from './samples';
 import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe } from './types';
 
-function initialState(): AppState {
+function initialState(language?: Language): AppState {
   const now = Date.now();
+  const samples = (language ?? detectLanguage()) === 'sl' ? SAMPLE_RECIPES_SL : SAMPLE_RECIPES_EN;
   return {
     version: 1,
-    recipes: SAMPLE_RECIPES.map((r, i) => ({ ...r, id: newId(), favorite: false, createdAt: now - i, updatedAt: now - i })),
+    language,
+    recipes: samples.map((r, i) => ({ ...r, id: newId(), favorite: false, createdAt: now - i, updatedAt: now - i })),
     plan: [],
     grocery: [],
   };
@@ -23,11 +26,16 @@ export async function initStore(): Promise<void> {
     const raw = await loadSaved();
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
-      if (parsed.version === 1 && Array.isArray(parsed.recipes)) state = parsed;
+      if (parsed.version === 1 && Array.isArray(parsed.recipes)) state = migrate(parsed);
     }
   } catch {
     // Keep the fresh state when saved data is corrupted.
   }
+}
+
+/** Upgrades data saved by older versions (grocery categories used to be Slovenian names). */
+function migrate(saved: AppState): AppState {
+  return { ...saved, grocery: saved.grocery.map((g) => ({ ...g, category: toCategoryId(g.category) })) };
 }
 
 const listeners = new Set<() => void>();
@@ -35,7 +43,8 @@ const listeners = new Set<() => void>();
 function setState(update: (s: AppState) => AppState): void {
   state = update(state);
   if (!save(JSON.stringify(state))) {
-    alert('Shramba brskalnika je polna. Odstrani nekaj receptov s fotografijami ali izvozi varnostno kopijo.');
+    // Imported lazily to avoid a circular import (i18n reads the store).
+    import('../i18n').then(({ translate }) => alert(translate(state.language ?? detectLanguage(), 'store.quotaFull')));
   }
   listeners.forEach((l) => l());
 }
@@ -52,6 +61,12 @@ export function useAppState(): AppState {
 
 export function getState(): AppState {
   return state;
+}
+
+// ---- Settings ----
+
+export function setLanguage(language: Language): void {
+  setState((s) => ({ ...s, language }));
 }
 
 // ---- Recipes ----
@@ -196,11 +211,11 @@ export function exportBackup(): string {
 export function importBackup(json: string): void {
   const parsed = JSON.parse(json) as AppState;
   if (parsed.version !== 1 || !Array.isArray(parsed.recipes) || !Array.isArray(parsed.plan) || !Array.isArray(parsed.grocery)) {
-    throw new Error('Datoteka ni veljavna varnostna kopija.');
+    throw new Error('invalid_backup');
   }
-  setState(() => parsed);
+  setState((s) => ({ ...migrate(parsed), language: parsed.language ?? s.language }));
 }
 
 export function resetAll(): void {
-  setState(() => initialState());
+  setState((s) => initialState(s.language));
 }

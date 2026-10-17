@@ -26,20 +26,26 @@ function isPrivateAddress(address) {
 
 /** Rejects non-http(s) URLs and hosts that resolve to local or private networks. */
 async function assertPublicUrl(url) {
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new UserError('Podprte so samo povezave http(s).');
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new UserError('invalid_url');
   const host = url.hostname.replace(/^\[|\]$/g, '');
   const addresses = isIP(host) ? [host] : (await lookup(host, { all: true })).map((r) => r.address);
-  if (addresses.some(isPrivateAddress)) throw new UserError('Ta naslov ni dovoljen.');
+  if (addresses.some(isPrivateAddress)) throw new UserError('not_allowed');
 }
 
-class UserError extends Error {}
+/** An expected failure; `message` is an error code the app translates (see "error.*" UI strings). */
+class UserError extends Error {
+  constructor(code, params = {}) {
+    super(code);
+    this.params = params;
+  }
+}
 
 async function fetchPage(rawUrl) {
   let url;
   try {
     url = new URL(rawUrl);
   } catch {
-    throw new UserError('Povezava ni veljavna.');
+    throw new UserError('invalid_url');
   }
 
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
@@ -54,7 +60,7 @@ async function fetchPage(rawUrl) {
       url = new URL(location, url);
       continue;
     }
-    if (!res.ok) throw new UserError(`Strani ni bilo mogoče naložiti (HTTP ${res.status}).`);
+    if (!res.ok) throw new UserError('http', { status: res.status });
 
     const reader = res.body.getReader();
     const chunks = [];
@@ -68,7 +74,7 @@ async function fetchPage(rawUrl) {
     await reader.cancel().catch(() => {});
     return { html: Buffer.concat(chunks).toString('utf8'), finalUrl: url.toString() };
   }
-  throw new UserError('Preveč preusmeritev.');
+  throw new UserError('too_many_redirects');
 }
 
 function readJson(req) {
@@ -76,13 +82,13 @@ function readJson(req) {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 10_000) reject(new UserError('Zahteva je prevelika.'));
+      if (body.length > 10_000) reject(new UserError('failed'));
     });
     req.on('end', () => {
       try {
         resolve(JSON.parse(body || '{}'));
       } catch {
-        reject(new UserError('Neveljaven JSON.'));
+        reject(new UserError('failed'));
       }
     });
     req.on('error', reject);
@@ -100,17 +106,17 @@ export async function handleApi(req, res) {
   try {
     if (path === '/api/import' && req.method === 'POST') {
       const { url } = await readJson(req);
-      if (typeof url !== 'string' || !url.trim()) throw new UserError('Manjka povezava.');
+      if (typeof url !== 'string' || !url.trim()) throw new UserError('invalid_url');
       const { html, finalUrl } = await fetchPage(url.trim());
       return send(res, 200, extractRecipeFromHtml(html, finalUrl));
     }
     if (path === '/api/health') return send(res, 200, { ok: true });
-    send(res, 404, { error: 'Ni najdeno.' });
+    send(res, 404, { error: 'not_found' });
   } catch (err) {
-    if (err instanceof UserError) return send(res, 400, { error: err.message });
-    if (err?.code === 'ENOTFOUND') return send(res, 400, { error: 'Te spletne strani ni bilo mogoče najti.' });
+    if (err instanceof UserError) return send(res, 400, { error: err.message, ...err.params });
+    if (err?.code === 'ENOTFOUND') return send(res, 400, { error: 'not_found' });
     console.error('[api]', err);
     const timeout = err?.name === 'TimeoutError' || err?.name === 'AbortError';
-    send(res, 502, { error: timeout ? 'Stran se ni odzvala pravočasno.' : 'Uvoz ni uspel. Poskusi prilepiti besedilo recepta.' });
+    send(res, 502, { error: timeout ? 'timeout' : 'failed' });
   }
 }

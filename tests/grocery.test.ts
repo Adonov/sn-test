@@ -1,21 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { addToGroceryList, categorize, formatGroceryAmount, normalizeName } from '../src/lib/grocery';
+import { addToGroceryList, categorize, formatGroceryAmount, normalizeName, toCategoryId } from '../src/lib/grocery';
 
 describe('categorize', () => {
   it.each([
-    ['paradižniki', 'Sadje in zelenjava'],
-    ['rdeča čebula', 'Sadje in zelenjava'],
-    ['piščančje prsi', 'Meso in ribe'],
-    ['mleka', 'Mlečni izdelki in jajca'],
-    ['feta sira', 'Mlečni izdelki in jajca'],
-    ['moke', 'Shramba'],
-    ['soli', 'Začimbe in omake'],
-    ['zelena solata', 'Sadje in zelenjava'],
-    ['all-purpose flour', 'Shramba'],
-    ['kisla smetana', 'Mlečni izdelki in jajca'],
-    ['nekaj čudnega', 'Drugo'],
+    ['paradižniki', 'produce'],
+    ['rdeča čebula', 'produce'],
+    ['piščančje prsi', 'meat'],
+    ['mleka', 'dairy'],
+    ['feta sira', 'dairy'],
+    ['moke', 'pantry'],
+    ['soli', 'spices'],
+    ['zelena solata', 'produce'],
+    ['all-purpose flour', 'pantry'],
+    ['kisla smetana', 'dairy'],
+    ['nekaj čudnega', 'other'],
+    ['Mehl', 'pantry'],
+    ['Zwiebeln', 'produce'],
+    ['schwarzer Pfeffer', 'spices'],
+    ['harina', 'pantry'],
+    ['pimiento rojo', 'produce'],
+    ['pimienta negra', 'spices'],
+    ['huevos', 'dairy'],
+    ['farine', 'pantry'],
+    ['beurre doux', 'dairy'],
+    ['pomodori', 'produce'],
+    ['petto di pollo', 'meat'],
+    ['leite', 'dairy'],
+    ['brašna', 'pantry'],
+    ['luk', 'produce'],
   ])('%s → %s', (name, category) => {
     expect(categorize(name)).toBe(category);
+  });
+});
+
+describe('toCategoryId', () => {
+  it('maps categories saved by the Slovenian-only version', () => {
+    expect(toCategoryId('Sadje in zelenjava')).toBe('produce');
+    expect(toCategoryId('dairy')).toBe('dairy');
+    expect(toCategoryId('nonsense')).toBe('other');
   });
 });
 
@@ -42,6 +64,14 @@ describe('addToGroceryList', () => {
     const [item] = addToGroceryList([], ['200 ml mleka'], 2.5);
     expect(item.quantity).toBe(500);
     expect(formatGroceryAmount(item)).toBe('500 ml');
+  });
+
+  it('formats decimals with the language separator', () => {
+    const [item] = addToGroceryList([], ['1,25 kg Mehl']);
+    expect(formatGroceryAmount(item, '.')).toBe('1 ¼ kg');
+    const [other] = addToGroceryList([], ['1.3 kg flour']);
+    expect(formatGroceryAmount(other, '.')).toBe('1.3 kg');
+    expect(formatGroceryAmount(other, ',')).toBe('1,3 kg');
   });
 
   it('keeps items with incompatible units separate', () => {

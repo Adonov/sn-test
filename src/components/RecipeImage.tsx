@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-const PALETTE = ['#ffd8a8', '#ffc9c9', '#d3f9d8', '#c5f6fa', '#e5dbff', '#fff3bf'];
+// Soft green/blue tints; the letter on top is drawn in the accent color via CSS.
+const PALETTE = ['#e3f1ec', '#e2edf6', '#e9f3e4', '#e0eff1', '#e8edf7', '#edf4ea'];
 
 /** Recipe photo with a colored placeholder when there is no image or it fails to load. */
 export function RecipeImage({ src, title, className }: { src?: string; title: string; className?: string }) {
@@ -11,7 +12,7 @@ export function RecipeImage({ src, title, className }: { src?: string; title: st
   const color = PALETTE[[...title].reduce((sum, c) => sum + c.charCodeAt(0), 0) % PALETTE.length];
   return (
     <div className={`${className ?? ''} placeholder`} style={{ background: color }} aria-hidden>
-      {title.trim()[0]?.toUpperCase() ?? '🍽'}
+      {title.trim()[0]?.toUpperCase() ?? ''}
     </div>
   );
 }

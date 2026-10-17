@@ -2,6 +2,29 @@ import { CapacitorHttp } from '@capacitor/core';
 import { extractRecipeFromHtml, type ExtractionMethod, type RecipeDraft } from '../../shared/recipeParsing';
 import { isNative } from './platform';
 
+export type ImportErrorCode =
+  | 'invalid_url'
+  | 'not_allowed'
+  | 'http'
+  | 'too_many_redirects'
+  | 'not_found'
+  | 'timeout'
+  | 'failed'
+  | 'unreachable'
+  | 'network';
+
+/** Import failure with a code the UI translates ("error.<code>"). */
+export class ImportError extends Error {
+  constructor(
+    readonly code: ImportErrorCode,
+    readonly params: Record<string, string | number> = {},
+  ) {
+    super(code);
+  }
+}
+
+const CODES: ImportErrorCode[] = ['invalid_url', 'not_allowed', 'http', 'too_many_redirects', 'not_found', 'timeout', 'failed', 'unreachable', 'network'];
+
 export interface ImportResult {
   recipe: RecipeDraft;
   method: ExtractionMethod;
@@ -16,7 +39,7 @@ const MOBILE_UA =
  */
 export async function importRecipeFromUrl(url: string): Promise<ImportResult> {
   if (isNative) {
-    if (!/^https?:\/\//i.test(url)) throw new Error('Povezava ni veljavna.');
+    if (!/^https?:\/\//i.test(url)) throw new ImportError('invalid_url');
     let res;
     try {
       res = await CapacitorHttp.get({
@@ -27,9 +50,9 @@ export async function importRecipeFromUrl(url: string): Promise<ImportResult> {
         readTimeout: 10_000,
       });
     } catch {
-      throw new Error('Strani ni bilo mogoče naložiti. Preveri internetno povezavo.');
+      throw new ImportError('network');
     }
-    if (res.status >= 400) throw new Error(`Strani ni bilo mogoče naložiti (HTTP ${res.status}).`);
+    if (res.status >= 400) throw new ImportError('http', { status: res.status });
     const html = typeof res.data === 'string' ? res.data : '';
     return extractRecipeFromHtml(html, res.url || url);
   }
@@ -42,10 +65,13 @@ export async function importRecipeFromUrl(url: string): Promise<ImportResult> {
       body: JSON.stringify({ url }),
     });
   } catch {
-    throw new Error('Strežnik ni dosegljiv.');
+    throw new ImportError('unreachable');
   }
-  const data = (await res.json().catch(() => ({}))) as Partial<ImportResult> & { error?: string };
-  if (!res.ok || !data.recipe || !data.method) throw new Error(data.error ?? 'Uvoz ni uspel.');
+  const data = (await res.json().catch(() => ({}))) as Partial<ImportResult> & { error?: string; status?: number };
+  if (!res.ok || !data.recipe || !data.method) {
+    const code = CODES.find((c) => c === data.error) ?? 'failed';
+    throw new ImportError(code, data.status ? { status: data.status } : {});
+  }
   return { recipe: data.recipe, method: data.method };
 }
 

@@ -1,11 +1,14 @@
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { useEffect, useState } from 'react';
+import { useI18n } from '../i18n';
+import { Icon } from '../components/Icon';
 import { isHeading } from '../lib/ingredients';
 import { findTimerSeconds, formatClock } from '../lib/timers';
 import { isNative } from '../lib/platform';
 import type { Recipe } from '../lib/types';
 
 export function CookMode({ recipe }: { recipe: Recipe }) {
+  const { t } = useI18n();
   const steps = recipe.steps.filter((s) => !isHeading(s));
   const [index, setIndex] = useState(0);
   const [showIngredients, setShowIngredients] = useState(false);
@@ -56,12 +59,12 @@ export function CookMode({ recipe }: { recipe: Recipe }) {
   return (
     <div className="cook-mode">
       <header className="cook-header">
-        <a className="icon-btn" href={`#/recipe/${recipe.id}`} aria-label="Zapri način kuhanja">
-          ✕
+        <a className="icon-btn" href={`#/recipe/${recipe.id}`} aria-label={t('cook.close')}>
+          <Icon name="close" size={20} />
         </a>
         <span className="cook-title">{recipe.title}</span>
         <button className="btn small" onClick={() => setShowIngredients((v) => !v)}>
-          {showIngredients ? 'Koraki' : 'Sestavine'}
+          {showIngredients ? t('cook.steps') : t('cook.ingredients')}
         </button>
       </header>
 
@@ -74,19 +77,17 @@ export function CookMode({ recipe }: { recipe: Recipe }) {
           ))}
         </ul>
       ) : steps.length === 0 ? (
-        <p className="cook-step">Ta recept nima zapisanih korakov.</p>
+        <p className="cook-step">{t('cook.noSteps')}</p>
       ) : (
         <>
           <div className="progress" aria-hidden>
             <div style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
           </div>
-          <p className="muted">
-            Korak {index + 1} od {steps.length}
-          </p>
+          <p className="muted">{t('cook.stepOf', { n: index + 1, total: steps.length })}</p>
           <p className="cook-step">{step}</p>
           {timerSeconds && remaining === undefined && (
             <button className="btn" onClick={() => setTimerEnd(Date.now() + timerSeconds * 1000)}>
-              ⏲ Zaženi časovnik ({formatClock(timerSeconds)})
+              {t('cook.startTimer', { time: formatClock(timerSeconds) })}
             </button>
           )}
         </>
@@ -94,24 +95,24 @@ export function CookMode({ recipe }: { recipe: Recipe }) {
 
       {remaining !== undefined && (
         <div className={`timer ${remaining === 0 ? 'done' : ''}`} role="timer">
-          <span>{remaining === 0 ? 'Čas je potekel!' : formatClock(remaining)}</span>
+          <span>{remaining === 0 ? t('cook.timeUp') : formatClock(remaining)}</span>
           <button className="btn small" onClick={() => setTimerEnd(undefined)}>
-            {remaining === 0 ? 'V redu' : 'Ustavi'}
+            {remaining === 0 ? t('cook.ok') : t('cook.stop')}
           </button>
         </div>
       )}
 
       <footer className="cook-nav">
         <button className="btn" disabled={index === 0} onClick={() => setIndex((i) => i - 1)}>
-          ← Nazaj
+          ← {t('cook.prev')}
         </button>
         {index < steps.length - 1 ? (
           <button className="btn primary" onClick={() => setIndex((i) => i + 1)}>
-            Naprej →
+            {t('cook.next')} →
           </button>
         ) : (
           <a className="btn primary" href={`#/recipe/${recipe.id}`}>
-            Dober tek! 🎉
+            {t('cook.done')}
           </a>
         )}
       </footer>

@@ -2,7 +2,8 @@ import type { Recipe } from './types';
 
 type Sample = Omit<Recipe, 'id' | 'favorite' | 'createdAt' | 'updatedAt'>;
 
-export const SAMPLE_RECIPES: Sample[] = [
+/** Sample recipes shown on first launch: Slovenian for Slovenian users, English for everyone else. */
+export const SAMPLE_RECIPES_SL: Sample[] = [
   {
     title: 'Palačinke',
     description: 'Klasične tanke palačinke za zajtrk ali sladico.',
@@ -67,5 +68,73 @@ export const SAMPLE_RECIPES: Sample[] = [
       'Pokapaj z olivnim oljem in potresi z origanom.',
     ],
     tags: ['solata', 'vegetarijansko', 'hitro'],
+  },
+];
+
+export const SAMPLE_RECIPES_EN: Sample[] = [
+  {
+    title: 'Pancakes',
+    description: 'Classic thin pancakes for breakfast or dessert.',
+    servings: 4,
+    prepMinutes: 10,
+    cookMinutes: 20,
+    ingredients: ['250 g flour', '500 ml milk', '2 eggs', '1 pinch salt', '1 tbsp sugar', '2 tbsp oil'],
+    steps: [
+      'Whisk the flour, salt and sugar together in a bowl.',
+      'Gradually pour in the milk, whisking until smooth. Add the eggs and oil.',
+      'Let the batter rest for 10 minutes.',
+      'Heat a lightly oiled pan. Pour in a ladle of batter and swirl it across the base.',
+      'Cook for about 1 minute on each side until golden.',
+    ],
+    tags: ['dessert', 'breakfast', 'vegetarian'],
+  },
+  {
+    title: 'Chicken curry with coconut milk',
+    description: 'A quick, creamy curry for weeknights.',
+    servings: 4,
+    prepMinutes: 15,
+    cookMinutes: 25,
+    ingredients: [
+      '600 g chicken breast, diced',
+      '1 onion, chopped',
+      '3 cloves garlic',
+      '1 tbsp grated ginger',
+      '2 tbsp curry powder',
+      '400 ml coconut milk',
+      '1 can chopped tomatoes',
+      '200 g rice',
+      '1 pinch salt',
+      'fresh cilantro to serve',
+    ],
+    steps: [
+      'Cook the rice according to the packet instructions.',
+      'Fry the onion in a little oil for 5 minutes, then add the garlic and ginger.',
+      'Add the chicken and brown it on all sides. Sprinkle with the curry powder.',
+      'Pour in the coconut milk and tomatoes and simmer for 15 minutes.',
+      'Season with salt and serve with the rice and cilantro.',
+    ],
+    tags: ['lunch', 'dinner', 'quick'],
+  },
+  {
+    title: 'Greek salad',
+    description: 'A fresh summer salad with feta.',
+    servings: 2,
+    prepMinutes: 10,
+    ingredients: [
+      '3 tomatoes',
+      '1 cucumber',
+      '1 red onion',
+      '1 green bell pepper',
+      '150 g feta cheese',
+      '12 black olives',
+      '3 tbsp olive oil',
+      '1 tsp oregano',
+    ],
+    steps: [
+      'Cut the tomatoes, cucumber and pepper into large chunks and the onion into thin rings.',
+      'Put the vegetables in a bowl, add the olives and place the feta on top.',
+      'Drizzle with olive oil and sprinkle with oregano.',
+    ],
+    tags: ['salad', 'vegetarian', 'quick'],
   },
 ];

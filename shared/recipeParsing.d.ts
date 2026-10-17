@@ -3,6 +3,7 @@ export interface RecipeDraft {
   description?: string;
   image?: string;
   sourceUrl?: string;
+  videoUrl?: string;
   servings?: number;
   prepMinutes?: number;
   cookMinutes?: number;
@@ -19,3 +20,4 @@ export function parseDuration(value: unknown): number | undefined;
 export function stripSocialWrapper(text: string): string;
 export function extractRecipeFromHtml(html: string, url: string): { recipe: RecipeDraft; method: ExtractionMethod };
 export function parseRecipeText(text: string): RecipeDraft;
+export function isVideoPageUrl(url: string): boolean;

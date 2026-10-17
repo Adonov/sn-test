@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
+import { useI18n } from '../i18n';
 import { addDays, formatDay, fromISODate, startOfWeek, toISODate } from '../lib/dates';
 import { navigate } from '../lib/router';
 import { addPlanEntry, addPlanToGrocery, removePlanEntry, updatePlanServings, useAppState } from '../lib/store';
@@ -8,6 +10,7 @@ import { MEAL_SLOTS, type MealSlot } from '../lib/types';
 
 export function Planner() {
   const { plan, recipes } = useAppState();
+  const { t, lang } = useI18n();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [picking, setPicking] = useState<{ date: string; slot: MealSlot }>();
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -24,22 +27,24 @@ export function Planner() {
   return (
     <>
       <header className="page-header">
-        <h1>Načrt obrokov</h1>
+        <h1>{t('planner.title')}</h1>
         <button className="btn primary" onClick={toGrocery} disabled={!weekEntries.length}>
-          🛒 Nakupovalni seznam za teden
+          {t('planner.toGrocery')}
         </button>
       </header>
 
       <div className="week-nav">
-        <button className="icon-btn" onClick={() => setWeekStart((w) => addDays(w, -7))} aria-label="Prejšnji teden">
-          ←
+        <button className="icon-btn" onClick={() => setWeekStart((w) => addDays(w, -7))} aria-label={t('planner.prevWeek')}>
+          <Icon name="back" size={20} />
         </button>
         <button className="link-btn" onClick={() => setWeekStart(startOfWeek(new Date()))}>
-          {fromISODate(from).toLocaleDateString('sl-SI', { day: 'numeric', month: 'long' })} –{' '}
-          {fromISODate(to).toLocaleDateString('sl-SI', { day: 'numeric', month: 'long' })}
+          {fromISODate(from).toLocaleDateString(lang, { day: 'numeric', month: 'long' })} –{' '}
+          {fromISODate(to).toLocaleDateString(lang, { day: 'numeric', month: 'long' })}
         </button>
-        <button className="icon-btn" onClick={() => setWeekStart((w) => addDays(w, 7))} aria-label="Naslednji teden">
-          →
+        <button className="icon-btn" onClick={() => setWeekStart((w) => addDays(w, 7))} aria-label={t('planner.nextWeek')}>
+          <span className="flip">
+            <Icon name="back" size={20} />
+          </span>
         </button>
       </div>
 
@@ -49,15 +54,16 @@ export function Planner() {
           const entries = weekEntries.filter((p) => p.date === date);
           return (
             <section key={date} className={`day card ${date === today ? 'today' : ''}`}>
-              <h2>{formatDay(day)}</h2>
+              <h2>{formatDay(day, lang)}</h2>
               {MEAL_SLOTS.map((slot) => {
-                const slotEntries = entries.filter((e) => e.slot === slot.id);
+                const slotEntries = entries.filter((e) => e.slot === slot);
+                const label = t(`slot.${slot}`);
                 return (
-                  <div key={slot.id} className="slot">
+                  <div key={slot} className="slot">
                     <div className="slot-head">
-                      <span className="muted small">{slot.label}</span>
-                      <button className="link-btn small" onClick={() => setPicking({ date, slot: slot.id })} aria-label={`Dodaj ${slot.label.toLowerCase()}`}>
-                        ＋
+                      <span className="muted small">{label}</span>
+                      <button className="link-btn small" onClick={() => setPicking({ date, slot })} aria-label={t('planner.add', { slot: label.toLowerCase() })}>
+                        <Icon name="plus" size={18} />
                       </button>
                     </div>
                     {slotEntries.map((entry) => {
@@ -72,16 +78,16 @@ export function Planner() {
                           <select
                             value={entry.servings}
                             onChange={(e) => updatePlanServings(entry.id, Number(e.target.value))}
-                            aria-label="Porcije"
+                            aria-label={t('planner.servings')}
                           >
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                               <option key={n} value={n}>
-                                {n} 🍽
+                                {n}
                               </option>
                             ))}
                           </select>
-                          <button className="icon-btn small" onClick={() => removePlanEntry(entry.id)} aria-label="Odstrani">
-                            ✕
+                          <button className="icon-btn small" onClick={() => removePlanEntry(entry.id)} aria-label={t('common.remove')}>
+                            <Icon name="close" size={16} />
                           </button>
                         </div>
                       );
@@ -101,15 +107,14 @@ export function Planner() {
 
 function RecipePicker({ date, slot, onClose }: { date: string; slot: MealSlot; onClose: () => void }) {
   const { recipes } = useAppState();
+  const { t, lang } = useI18n();
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const matches = recipes.filter((r) => !q || r.title.toLowerCase().includes(q) || r.tags.some((t) => t.includes(q)));
-  const label = MEAL_SLOTS.find((s) => s.id === slot)!.label;
-
   return (
-    <Modal title={`${label} · ${formatDay(fromISODate(date))}`} onClose={onClose}>
-      <input className="search" type="search" autoFocus placeholder="Išči recept…" value={query} onChange={(e) => setQuery(e.target.value)} />
-      {recipes.length === 0 && <p className="muted">Najprej dodaj kakšen recept.</p>}
+    <Modal title={`${t(`slot.${slot}`)} · ${formatDay(fromISODate(date), lang)}`} onClose={onClose}>
+      <input className="search" type="search" autoFocus placeholder={t('planner.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
+      {recipes.length === 0 && <p className="muted">{t('planner.noRecipes')}</p>}
       <ul className="picker-list">
         {matches.map((r) => (
           <li key={r.id}>

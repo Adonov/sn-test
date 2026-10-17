@@ -1,34 +1,39 @@
 :root {
-  --bg: #fffaf5;
+  /* Calm, minimal palette: soft sage green with a light blue secondary. */
+  --bg: #f6f9f8;
   --surface: #ffffff;
-  --surface-2: #fff1e6;
-  --text: #2b2118;
-  --muted: #7a6a5c;
-  --border: #f0e2d4;
-  --accent: #e8590c;
+  --surface-2: #eef4f2;
+  --text: #23302c;
+  --muted: #71827d;
+  --border: #e3ebe8;
+  --accent: #6aae9f;
+  --accent-strong: #3d7f71;
   --accent-text: #ffffff;
-  --accent-soft: #ffe8d6;
-  --danger: #c92a2a;
-  --success: #2f9e44;
-  --radius: 14px;
-  --shadow: 0 1px 3px rgb(60 30 0 / 0.08), 0 4px 16px rgb(60 30 0 / 0.05);
+  --accent-soft: #e5f2ee;
+  --blue-soft: #e6eff7;
+  --blue-strong: #4f7fa3;
+  --danger: #c0564f;
+  --radius: 16px;
+  --shadow: none;
   --nav-height: 64px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1b1612;
-    --surface: #251e18;
-    --surface-2: #30261e;
-    --text: #f5ece3;
-    --muted: #b3a294;
-    --border: #3a2f26;
-    --accent: #ff8a3d;
-    --accent-text: #1b1612;
-    --accent-soft: #4a2c17;
-    --danger: #ff6b6b;
-    --shadow: none;
+    --bg: #131a18;
+    --surface: #1a2321;
+    --surface-2: #212c29;
+    --text: #e5eeeb;
+    --muted: #93a49f;
+    --border: #29342f;
+    --accent: #7cbfb0;
+    --accent-strong: #93d1c3;
+    --accent-text: #10201c;
+    --accent-soft: #1e332e;
+    --blue-soft: #1c2a35;
+    --blue-strong: #94bbd9;
+    --danger: #e8877f;
     color-scheme: dark;
   }
 }
@@ -48,7 +53,17 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.flip {
+  display: inline-flex;
+  transform: scaleX(-1);
 }
 
 h1,
@@ -59,11 +74,14 @@ h3 {
 }
 
 h1 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 h2 {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 h3 {
@@ -150,12 +168,11 @@ textarea {
 }
 
 .bottom-nav a.active {
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--accent-strong);
+  font-weight: 500;
 }
 
 .nav-icon {
-  font-size: 1.35rem;
   position: relative;
 }
 
@@ -171,7 +188,7 @@ textarea {
   font-size: 0.7rem;
   line-height: 18px;
   text-align: center;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @media (min-width: 900px) {
@@ -204,9 +221,12 @@ textarea {
   }
 
   .bottom-nav .brand {
-    display: block;
-    font-weight: 800;
-    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent-strong);
+    font-weight: 600;
+    font-size: 1.2rem;
     padding: 0 0.75rem 1.25rem;
   }
 
@@ -273,19 +293,25 @@ textarea {
   background: var(--surface);
   color: var(--text);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
+/* Primary actions use a soft tint rather than a loud fill. */
 .btn.primary {
-  background: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-strong);
+}
+
+.btn.primary:hover:not(:disabled) {
   border-color: var(--accent);
-  color: var(--accent-text);
 }
 
 .btn.danger {
@@ -310,31 +336,30 @@ textarea {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: none;
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   text-decoration: none;
   cursor: pointer;
-  font-size: 1.1rem;
-  box-shadow: var(--shadow);
   flex-shrink: 0;
 }
 
 .icon-btn.small {
   width: 30px;
   height: 30px;
-  font-size: 0.85rem;
-  box-shadow: none;
+  border: none;
   background: transparent;
   color: var(--muted);
 }
 
 .link-btn {
+  display: inline-flex;
+  align-items: center;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-strong);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.25rem 0.5rem;
 }
 
@@ -371,15 +396,16 @@ textarea {
 }
 
 .chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-strong);
 }
 
 .chip.static {
   cursor: default;
-  background: var(--surface-2);
+  background: var(--blue-soft);
   border-color: transparent;
+  color: var(--blue-strong);
 }
 
 .tabs {
@@ -397,12 +423,13 @@ textarea {
   padding: 0.5rem;
   border-radius: 999px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .tabs button.active {
   background: var(--surface);
-  box-shadow: var(--shadow);
+  color: var(--accent-strong);
 }
 
 /* ---- Cards & text ---- */
@@ -449,7 +476,7 @@ textarea {
 }
 
 .notice.warn {
-  border-left: 4px solid var(--accent);
+  background: var(--blue-soft);
 }
 
 .error {
@@ -517,9 +544,9 @@ div.placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: rgb(0 0 0 / 0.35);
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--accent);
 }
 
 .card-body {
@@ -544,11 +571,13 @@ div.placeholder {
   right: 8px;
   width: 34px;
   height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   border: none;
-  background: rgb(255 255 255 / 0.9);
-  color: #c92a2a;
-  font-size: 1.1rem;
+  background: rgb(255 255 255 / 0.85);
+  color: var(--accent-strong);
   cursor: pointer;
 }
 
@@ -623,7 +652,7 @@ div.hero-image.placeholder {
 
 .stepper span {
   padding: 0 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   min-width: 100px;
   text-align: center;
 }
@@ -657,7 +686,7 @@ div.hero-image.placeholder {
 
 .ingredient-heading,
 .step-heading {
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.75rem 0 0.25rem;
   list-style: none;
 }
@@ -673,7 +702,7 @@ div.hero-image.placeholder {
 
 .steps li::marker {
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .day-picker {
@@ -697,7 +726,7 @@ div.hero-image.placeholder {
 }
 
 .day-option.next-week {
-  background: var(--surface-2);
+  background: var(--blue-soft);
 }
 
 /* ---- Editor ---- */
@@ -710,7 +739,7 @@ div.hero-image.placeholder {
 }
 
 .field > span {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .grid-3 {
@@ -850,7 +879,6 @@ div.hero-image.placeholder {
 
 .day.today {
   border-color: var(--accent);
-  border-width: 2px;
 }
 
 .slot + .slot {
@@ -906,8 +934,11 @@ div.hero-image.placeholder {
 }
 
 .grocery-group h2 {
-  color: var(--accent);
-  font-size: 1rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .grocery-item {
@@ -947,7 +978,7 @@ div.hero-image.placeholder {
 
 .cook-title {
   flex: 1;
-  font-weight: 700;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -992,12 +1023,12 @@ div.hero-image.placeholder {
   margin: 1rem 0;
   font-size: 1.6rem;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .timer.done {
-  background: var(--accent);
-  color: var(--accent-text);
+  background: var(--blue-soft);
+  color: var(--blue-strong);
   animation: pulse 1s infinite;
 }
 
@@ -1018,4 +1049,43 @@ div.hero-image.placeholder {
   flex: 1;
   padding: 0.9rem;
   font-size: 1.1rem;
+}
+
+/* ---- Video ---- */
+
+.video {
+  margin: 1rem 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.video iframe,
+.video video {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+
+.video video {
+  max-height: 70vh;
+  background: #000;
+}
+
+/* Vertical videos (TikTok, Reels, Shorts) are kept phone-sized instead of filling the page. */
+.video.portrait {
+  max-width: 360px;
+  margin-inline: auto;
+}
+
+.video.portrait iframe {
+  min-height: 560px;
+}
+
+/* ---- Settings ---- */
+
+.language-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }

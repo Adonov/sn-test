@@ -25,13 +25,38 @@ const UNIT_ALIASES: Record<string, string> = {
   package: 'pkg', packages: 'pkg', pkg: 'pkg', zavitek: 'pkg', zavitka: 'pkg', zavitki: 'pkg', vrečka: 'pkg', vrečke: 'pkg',
   slice: 'slice', slices: 'slice', rezina: 'slice', rezini: 'slice', rezine: 'slice', rezin: 'slice',
   kos: 'piece', kosa: 'piece', kosi: 'piece', kosov: 'piece', piece: 'piece', pieces: 'piece',
+  // German
+  el: 'tbsp', esslöffel: 'tbsp', tl: 'tsp', teelöffel: 'tsp', tasse: 'cup', tassen: 'cup', prise: 'pinch',
+  zehe: 'clove', zehen: 'clove', dose: 'can', dosen: 'can', packung: 'pkg', päckchen: 'pkg', pck: 'pkg',
+  scheibe: 'slice', scheiben: 'slice', stück: 'piece', stk: 'piece',
+  // Spanish / Portuguese
+  cucharada: 'tbsp', cucharadas: 'tbsp', cda: 'tbsp', cdas: 'tbsp', cucharadita: 'tsp', cucharaditas: 'tsp', cdta: 'tsp', cdtas: 'tsp',
+  taza: 'cup', tazas: 'cup', pizca: 'pinch', diente: 'clove', dientes: 'clove', lata: 'can', latas: 'can',
+  paquete: 'pkg', paquetes: 'pkg', sobre: 'pkg', rebanada: 'slice', rebanadas: 'slice', loncha: 'slice', lonchas: 'slice',
+  'colher de sopa': 'tbsp', 'colheres de sopa': 'tbsp', 'colher de chá': 'tsp', 'colheres de chá': 'tsp',
+  xícara: 'cup', xícaras: 'cup', chávena: 'cup', chávenas: 'cup', pitada: 'pinch', dente: 'clove', dentes: 'clove',
+  pacote: 'pkg', pacotes: 'pkg', fatia: 'slice', fatias: 'slice',
+  // French
+  'cuillère à soupe': 'tbsp', 'cuillères à soupe': 'tbsp', 'c. à soupe': 'tbsp', 'c. à s.': 'tbsp', cas: 'tbsp',
+  'cuillère à café': 'tsp', 'cuillères à café': 'tsp', 'c. à café': 'tsp', 'c. à c.': 'tsp', cac: 'tsp',
+  tasses: 'cup', pincée: 'pinch', pincées: 'pinch', gousse: 'clove', gousses: 'clove', boîte: 'can', boîtes: 'can',
+  sachet: 'pkg', sachets: 'pkg', tranche: 'slice', tranches: 'slice',
+  // Italian
+  cucchiaio: 'tbsp', cucchiai: 'tbsp', cucchiaino: 'tsp', cucchiaini: 'tsp', tazza: 'cup', tazze: 'cup',
+  pizzico: 'pinch', spicchio: 'clove', spicchi: 'clove', lattina: 'can', lattine: 'can', barattolo: 'can',
+  confezione: 'pkg', confezioni: 'pkg', bustina: 'pkg', bustine: 'pkg', fetta: 'slice', fette: 'slice',
+  // Croatian
+  žličica: 'tsp', žličice: 'tsp', šalica: 'cup', šalice: 'cup', prstohvat: 'pinch',
+  češanj: 'clove', češnja: 'clove', češnjeva: 'clove', konzerva: 'can', konzerve: 'can', vrećica: 'pkg', vrećice: 'pkg',
+  kriška: 'slice', kriške: 'slice', komad: 'piece', komada: 'piece',
 };
 const UNIT_PATTERN = Object.keys(UNIT_ALIASES)
   .sort((a, b) => b.length - a.length)
+  .map((u) => u.replace(/[.]/g, '\\.'))
   .join('|');
 
 const INGREDIENT_RE = new RegExp(
-  `^\\s*(${NUM})(?:\\s*[-–]\\s*(${NUM}))?\\s*(?:(${UNIT_PATTERN})\\.?(?=[\\s,)]|$))?\\s*(?:of\\s+)?(.*)$`,
+  `^\\s*(${NUM})(?:\\s*[-–]\\s*(${NUM}))?\\s*(?:(${UNIT_PATTERN})\\.?(?=[\\s,)]|$))?\\s*(?:(?:of|de|di|del|della)\\s+|d['’])?(.*)$`,
   'iu',
 );
 
@@ -83,8 +108,8 @@ const FRACTION_GLYPHS: [number, string][] = [
   [5 / 8, '⅝'], [2 / 3, '⅔'], [3 / 4, '¾'], [7 / 8, '⅞'],
 ];
 
-/** Formats a quantity for display: 1.5 → "1 ½", 0.333 → "⅓", 2.4 → "2,4". */
-export function formatQuantity(value: number): string {
+/** Formats a quantity for display: 1.5 → "1 ½", 0.333 → "⅓", 2.4 → "2,4" (or "2.4"). */
+export function formatQuantity(value: number, decimal = ','): string {
   if (value <= 0 || !Number.isFinite(value)) return '0';
   const whole = Math.floor(value);
   const frac = value - whole;
@@ -95,15 +120,15 @@ export function formatQuantity(value: number): string {
     if (glyph) return whole ? `${whole} ${glyph}` : glyph;
   }
   const rounded = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
-  return String(rounded).replace('.', ',');
+  return String(rounded).replace('.', decimal);
 }
 
 /** Rewrites an ingredient line with its quantity multiplied by `factor`. */
-export function scaleIngredient(line: string, factor: number): string {
+export function scaleIngredient(line: string, factor: number, decimal = ','): string {
   if (factor === 1 || isHeading(line)) return line;
   const p = parseIngredient(line);
   if (p.quantity === undefined) return line;
-  const qty = formatQuantity(p.quantity * factor);
-  const range = p.quantityMax !== undefined ? `–${formatQuantity(p.quantityMax * factor)}` : '';
+  const qty = formatQuantity(p.quantity * factor, decimal);
+  const range = p.quantityMax !== undefined ? `–${formatQuantity(p.quantityMax * factor, decimal)}` : '';
   return [qty + range, p.unit, p.name].filter(Boolean).join(' ');
 }

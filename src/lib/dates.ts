@@ -22,8 +22,8 @@ export function startOfWeek(date: Date): Date {
   return addDays(copy, -((copy.getDay() + 6) % 7));
 }
 
-export function formatDay(date: Date): string {
-  return date.toLocaleDateString('sl-SI', { weekday: 'long', day: 'numeric', month: 'numeric' });
+export function formatDay(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'numeric' });
 }
 
 export function formatMinutes(minutes?: number): string {

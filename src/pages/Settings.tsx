@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
-import { exportBackup, importBackup, resetAll, useAppState } from '../lib/store';
+import { LANGUAGES, useI18n, type Language } from '../i18n';
+import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 
 export function Settings() {
   const { recipes, plan } = useAppState();
+  const { t, lang } = useI18n();
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string>();
 
@@ -19,29 +21,49 @@ export function Settings() {
     if (!file) return;
     try {
       importBackup(await file.text());
-      setMessage('Varnostna kopija je obnovljena.');
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Obnova ni uspela.');
+      setMessage(t('settings.restored'));
+    } catch {
+      setMessage(t('settings.invalidBackup'));
     }
   };
 
   return (
     <>
       <header className="page-header">
-        <h1>Nastavitve</h1>
+        <h1>{t('settings.title')}</h1>
       </header>
 
       <section className="card">
-        <h2>Tvoji podatki</h2>
+        <h2>{t('settings.language')}</h2>
+        <div className="language-grid" role="radiogroup" aria-label={t('settings.language')}>
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.code}
+              role="radio"
+              aria-checked={lang === l.code}
+              className={`chip ${lang === l.code ? 'active' : ''}`}
+              onClick={() => setLanguage(l.code as Language)}
+              lang={l.code}
+            >
+              {l.name}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>{t('settings.data')}</h2>
         <p className="muted">
-          {recipes.length} receptov · {plan.length} načrtovanih obrokov. Podatki so shranjeni samo v tem brskalniku.
+          {t('settings.counts', { recipes: recipes.length, meals: plan.length })}
+          <br />
+          {t('settings.dataStored')}
         </p>
         <div className="action-row">
           <button className="btn" onClick={download}>
-            ⬇️ Izvozi varnostno kopijo
+            {t('settings.export')}
           </button>
           <button className="btn" onClick={() => fileInput.current?.click()}>
-            ⬆️ Obnovi iz datoteke
+            {t('settings.restore')}
           </button>
           <input ref={fileInput} type="file" accept="application/json" hidden onChange={(e) => restore(e.target.files?.[0])} />
         </div>
@@ -49,13 +71,10 @@ export function Settings() {
       </section>
 
       <section className="card">
-        <h2>Ponastavi</h2>
-        <p className="muted">Izbriše vse recepte, načrt in nakupovalni seznam ter naloži primere receptov.</p>
-        <button
-          className="btn danger"
-          onClick={() => confirm('Res želiš izbrisati vse podatke? Tega ni mogoče razveljaviti.') && resetAll()}
-        >
-          Izbriši vse podatke
+        <h2>{t('settings.reset')}</h2>
+        <p className="muted">{t('settings.resetText')}</p>
+        <button className="btn danger" onClick={() => confirm(t('settings.confirmReset')) && resetAll()}>
+          {t('settings.resetButton')}
         </button>
       </section>
     </>

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
+import { useI18n } from '../i18n';
 import { formatMinutes } from '../lib/dates';
 import { toggleFavorite, useAppState } from '../lib/store';
 
@@ -7,13 +9,14 @@ const FAVORITES = '__favorites';
 
 export function Library() {
   const { recipes } = useAppState();
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string>();
 
   const tags = useMemo(() => {
     const counts = new Map<string, number>();
-    recipes.forEach((r) => r.tags.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1)));
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+    recipes.forEach((r) => r.tags.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1)));
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([tag]) => tag);
   }, [recipes]);
 
   const visible = useMemo(() => {
@@ -24,7 +27,7 @@ export function Library() {
       if (!q) return true;
       return (
         r.title.toLowerCase().includes(q) ||
-        r.tags.some((t) => t.includes(q)) ||
+        r.tags.some((tag) => tag.includes(q)) ||
         r.ingredients.some((i) => i.toLowerCase().includes(q))
       );
     });
@@ -33,13 +36,13 @@ export function Library() {
   return (
     <>
       <header className="page-header">
-        <h1>Moji recepti</h1>
+        <h1>{t('library.title')}</h1>
         <div className="header-actions">
           <a className="btn" href="#/import">
-            ⬇️ Uvozi
+            {t('library.import')}
           </a>
           <a className="btn primary" href="#/new">
-            ＋ Nov
+            <Icon name="plus" size={18} /> {t('library.new')}
           </a>
         </div>
       </header>
@@ -47,36 +50,35 @@ export function Library() {
       <input
         className="search"
         type="search"
-        placeholder="Išči po imenu, sestavini ali oznaki…"
+        placeholder={t('library.search')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      <div className="chips" role="group" aria-label="Filtri">
+      <div className="chips" role="group" aria-label={t('library.filters')}>
         <button className={`chip ${!filter ? 'active' : ''}`} onClick={() => setFilter(undefined)}>
-          Vsi ({recipes.length})
+          {t('library.all', { count: recipes.length })}
         </button>
         <button className={`chip ${filter === FAVORITES ? 'active' : ''}`} onClick={() => setFilter(FAVORITES)}>
-          ♥ Priljubljeni
+          {t('library.favorites')}
         </button>
-        {tags.map((t) => (
-          <button key={t} className={`chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(filter === t ? undefined : t)}>
-            #{t}
+        {tags.map((tag) => (
+          <button key={tag} className={`chip ${filter === tag ? 'active' : ''}`} onClick={() => setFilter(filter === tag ? undefined : tag)}>
+            #{tag}
           </button>
         ))}
       </div>
 
       {recipes.length === 0 ? (
         <div className="empty">
-          <p className="empty-icon">📖</p>
-          <h2>Še nimaš receptov</h2>
-          <p>Uvozi recept s spletne strani, Instagrama ali TikToka, ali ga dodaj ročno.</p>
+          <h2>{t('library.emptyTitle')}</h2>
+          <p>{t('library.emptyText')}</p>
           <a className="btn primary" href="#/import">
-            Uvozi prvi recept
+            {t('library.emptyCta')}
           </a>
         </div>
       ) : visible.length === 0 ? (
-        <p className="muted center">Ni receptov, ki bi ustrezali iskanju.</p>
+        <p className="muted center">{t('library.noMatches')}</p>
       ) : (
         <ul className="recipe-grid">
           {visible.map((r) => {
@@ -88,17 +90,17 @@ export function Library() {
                   <div className="card-body">
                     <h3>{r.title}</h3>
                     <p className="muted small">
-                      {[time && `⏱ ${time}`, `${r.ingredients.length} sestavin`].filter(Boolean).join(' · ')}
+                      {[time, t('library.ingredientCount', { count: r.ingredients.length })].filter(Boolean).join(' · ')}
                     </p>
                   </div>
                 </a>
                 <button
                   className={`fav-btn ${r.favorite ? 'on' : ''}`}
                   onClick={() => toggleFavorite(r.id)}
-                  aria-label={r.favorite ? 'Odstrani iz priljubljenih' : 'Dodaj med priljubljene'}
+                  aria-label={r.favorite ? t('library.favRemove') : t('library.favAdd')}
                   aria-pressed={r.favorite}
                 >
-                  {r.favorite ? '♥' : '♡'}
+                  <Icon name="heart" size={18} filled={r.favorite} />
                 </button>
               </li>
             );

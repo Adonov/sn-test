@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useI18n } from '../i18n';
 import { fileToDataUrl } from '../lib/image';
 import { navigate } from '../lib/router';
 import { clearPendingDraft, getPendingDraft, saveRecipe } from '../lib/store';
@@ -9,6 +10,7 @@ interface FormState {
   description: string;
   image: string;
   sourceUrl: string;
+  videoUrl: string;
   servings: string;
   prepMinutes: string;
   cookMinutes: string;
@@ -24,6 +26,7 @@ function toForm(r?: Partial<Recipe>): FormState {
     description: r?.description ?? '',
     image: r?.image ?? '',
     sourceUrl: r?.sourceUrl ?? '',
+    videoUrl: r?.videoUrl ?? '',
     servings: String(r?.servings ?? 4),
     prepMinutes: r?.prepMinutes ? String(r.prepMinutes) : '',
     cookMinutes: r?.cookMinutes ? String(r.cookMinutes) : '',
@@ -49,6 +52,7 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
   const [draft] = useState(() => (recipe ? undefined : getPendingDraft()));
   const [form, setForm] = useState<FormState>(() => toForm(recipe ?? draft));
   const [imageError, setImageError] = useState<string>();
+  const { t } = useI18n();
   const isImported = Boolean(draft);
 
   useEffect(() => clearPendingDraft, []);
@@ -62,7 +66,7 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
       setForm((f) => ({ ...f, image: dataUrl }));
       setImageError(undefined);
     } catch {
-      setImageError('Fotografije ni bilo mogoče naložiti.');
+      setImageError(t('editor.photoError'));
     }
   };
 
@@ -70,10 +74,11 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
     e.preventDefault();
     const id = saveRecipe({
       id: recipe?.id,
-      title: form.title.trim() || 'Recept brez imena',
+      title: form.title.trim() || t('recipe.untitled'),
       description: form.description.trim() || undefined,
       image: form.image.trim() || undefined,
       sourceUrl: form.sourceUrl.trim() || undefined,
+      videoUrl: form.videoUrl.trim() || undefined,
       servings: optionalNumber(form.servings) ?? 1,
       prepMinutes: optionalNumber(form.prepMinutes),
       cookMinutes: optionalNumber(form.cookMinutes),
@@ -88,27 +93,27 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
   return (
     <form className="editor" onSubmit={submit}>
       <header className="page-header">
-        <h1>{recipe ? 'Uredi recept' : isImported ? 'Preveri uvoženi recept' : 'Nov recept'}</h1>
+        <h1>{recipe ? t('editor.titleEdit') : isImported ? t('editor.titleReview') : t('editor.titleNew')}</h1>
       </header>
-      {isImported && <p className="notice">Preveri, ali so sestavine in koraki pravilno prepoznani, nato shrani.</p>}
+      {isImported && <p className="notice">{t('editor.reviewNotice')}</p>}
 
       <label className="field">
-        <span>Ime recepta</span>
-        <input required value={form.title} onChange={set('title')} placeholder="npr. Domača pica" />
+        <span>{t('editor.name')}</span>
+        <input required value={form.title} onChange={set('title')} placeholder={t('editor.namePlaceholder')} />
       </label>
 
       <div className="field">
-        <span>Fotografija</span>
+        <span>{t('editor.photo')}</span>
         {form.image && <img className="editor-preview" src={form.image} alt="" referrerPolicy="no-referrer" />}
         <div className="row">
-          <input value={form.image.startsWith('data:') ? '(naložena fotografija)' : form.image} onChange={set('image')} placeholder="Povezava do slike" disabled={form.image.startsWith('data:')} />
+          <input value={form.image.startsWith('data:') ? t('editor.photoUploaded') : form.image} onChange={set('image')} placeholder={t('editor.photoUrl')} disabled={form.image.startsWith('data:')} />
           <label className="btn file-btn">
-            📷 Naloži
+            {t('editor.upload')}
             <input type="file" accept="image/*" onChange={(e) => onPhoto(e.target.files?.[0])} hidden />
           </label>
           {form.image && (
             <button type="button" className="btn" onClick={() => setForm((f) => ({ ...f, image: '' }))}>
-              Odstrani
+              {t('common.remove')}
             </button>
           )}
         </div>
@@ -116,58 +121,64 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
       </div>
 
       <label className="field">
-        <span>Kratek opis</span>
+        <span>{t('editor.description')}</span>
         <input value={form.description} onChange={set('description')} />
       </label>
 
       <div className="grid-3">
         <label className="field">
-          <span>Porcije</span>
+          <span>{t('editor.servings')}</span>
           <input type="number" min={1} value={form.servings} onChange={set('servings')} />
         </label>
         <label className="field">
-          <span>Priprava (min)</span>
+          <span>{t('editor.prep')}</span>
           <input type="number" min={0} value={form.prepMinutes} onChange={set('prepMinutes')} />
         </label>
         <label className="field">
-          <span>Kuhanje (min)</span>
+          <span>{t('editor.cook')}</span>
           <input type="number" min={0} value={form.cookMinutes} onChange={set('cookMinutes')} />
         </label>
       </div>
 
       <label className="field">
-        <span>Sestavine</span>
-        <small className="muted">Ena sestavina na vrstico. Vrstica, ki se konča z dvopičjem (npr. »Za omako:«), je naslov skupine.</small>
-        <textarea rows={8} value={form.ingredients} onChange={set('ingredients')} placeholder={'500 g moke\n2 jajci\n1 žlička soli'} />
+        <span>{t('editor.ingredients')}</span>
+        <small className="muted">{t('editor.ingredientsHint')}</small>
+        <textarea rows={8} value={form.ingredients} onChange={set('ingredients')} placeholder={t('editor.ingredientsPlaceholder')} />
       </label>
 
       <label className="field">
-        <span>Postopek</span>
-        <small className="muted">Vsak korak v svoji vrstici.</small>
+        <span>{t('editor.steps')}</span>
+        <small className="muted">{t('editor.stepsHint')}</small>
         <textarea rows={10} value={form.steps} onChange={set('steps')} />
       </label>
 
       <label className="field">
-        <span>Oznake</span>
-        <input value={form.tags} onChange={set('tags')} placeholder="kosilo, hitro, vegetarijansko" />
+        <span>{t('editor.video')}</span>
+        <small className="muted">{t('editor.videoHint')}</small>
+        <input type="url" value={form.videoUrl} onChange={set('videoUrl')} placeholder="https://…" />
       </label>
 
       <label className="field">
-        <span>Vir (povezava)</span>
+        <span>{t('editor.tags')}</span>
+        <input value={form.tags} onChange={set('tags')} placeholder={t('editor.tagsPlaceholder')} />
+      </label>
+
+      <label className="field">
+        <span>{t('editor.source')}</span>
         <input type="url" value={form.sourceUrl} onChange={set('sourceUrl')} placeholder="https://…" />
       </label>
 
       <label className="field">
-        <span>Opombe</span>
+        <span>{t('editor.notes')}</span>
         <textarea rows={3} value={form.notes} onChange={set('notes')} />
       </label>
 
       <div className="action-row sticky-actions">
         <button type="button" className="btn" onClick={() => history.back()}>
-          Prekliči
+          {t('editor.cancel')}
         </button>
         <button type="submit" className="btn primary">
-          Shrani recept
+          {t('editor.save')}
         </button>
       </div>
     </form>

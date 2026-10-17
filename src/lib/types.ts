@@ -1,9 +1,13 @@
+import type { Language } from '../i18n/languages';
+
 export interface Recipe {
   id: string;
   title: string;
   description?: string;
   image?: string;
   sourceUrl?: string;
+  /** YouTube/TikTok/Instagram/Vimeo link or a direct video file shown in the recipe. */
+  videoUrl?: string;
   servings: number;
   prepMinutes?: number;
   cookMinutes?: number;
@@ -19,12 +23,11 @@ export interface Recipe {
 
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
-export const MEAL_SLOTS: { id: MealSlot; label: string }[] = [
-  { id: 'breakfast', label: 'Zajtrk' },
-  { id: 'lunch', label: 'Kosilo' },
-  { id: 'dinner', label: 'Večerja' },
-  { id: 'snack', label: 'Prigrizek' },
-];
+export const MEAL_SLOTS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+export const CATEGORIES = ['produce', 'meat', 'dairy', 'bakery', 'pantry', 'spices', 'frozen', 'drinks', 'other'] as const;
+
+export type CategoryId = (typeof CATEGORIES)[number];
 
 export interface PlanEntry {
   id: string;
@@ -40,13 +43,15 @@ export interface GroceryItem {
   name: string;
   quantity?: number;
   unit?: string;
-  category: string;
+  category: CategoryId;
   checked: boolean;
   recipeIds: string[];
 }
 
 export interface AppState {
   version: 1;
+  /** Chosen UI language; undefined follows the device language. */
+  language?: Language;
   recipes: Recipe[];
   plan: PlanEntry[];
   grocery: GroceryItem[];

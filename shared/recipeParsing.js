@@ -62,6 +62,21 @@ function pickImage(value) {
   return undefined;
 }
 
+function pickVideo(value) {
+  if (!value) return undefined;
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return pickVideo(value[0]);
+  if (typeof value === 'object') return value.embedUrl || value.contentUrl || value.url || undefined;
+  return undefined;
+}
+
+/** Links to pages that are themselves a video (the recipe video is the post itself). */
+export function isVideoPageUrl(url) {
+  return /^https?:\/\/([\w-]+\.)*(youtube\.com\/(watch|shorts)|youtu\.be\/|tiktok\.com\/@[^/]+\/video\/|instagram\.com\/(reel|reels|tv)\/|vimeo\.com\/\d)/i.test(
+    String(url),
+  );
+}
+
 function hasType(node, type) {
   const t = node && node['@type'];
   return Array.isArray(t) ? t.includes(type) : t === type;
@@ -120,10 +135,11 @@ function normalizeJsonLdRecipe(node, url) {
   const cook = parseDuration(node.cookTime);
   const total = parseDuration(node.totalTime);
   return {
-    title: cleanText(node.name) || 'Recept brez imena',
+    title: cleanText(node.name),
     description: cleanText(node.description) || undefined,
     image: pickImage(node.image),
     sourceUrl: url,
+    videoUrl: pickVideo(node.video),
     servings: parseYield(node.recipeYield),
     prepMinutes: prep,
     cookMinutes: cook ?? (total && prep ? Math.max(total - prep, 0) || undefined : total),
@@ -143,13 +159,18 @@ function readMeta(html, name) {
   return content ? decodeEntities(content).trim() : undefined;
 }
 
+function readVideoMeta(html) {
+  const video = readMeta(html, 'og:video:secure_url') || readMeta(html, 'og:video:url') || readMeta(html, 'og:video');
+  return video && /^https?:\/\//i.test(video) ? video : undefined;
+}
+
 /**
  * Strips the "123 likes, 4 comments - user on March 1, 2025: "…"" wrapper that
  * Instagram and TikTok put around captions in their og:description.
  */
 export function stripSocialWrapper(text) {
   return text
-    .replace(/^[\d.,\s]+[KkMm]?\s+(likes?|všečk\w*)[^:]*:\s*/i, '')
+    .replace(/^[\d.,\s]+[KkMm]?\s+(likes?|všečk\w*|me gusta|j['’]aime|mi piace|gefällt|curtidas|sviđa)[^:]*:\s*/i, '')
     .replace(/^[^\n:]{0,80}\bon (Instagram|TikTok)\s*:\s*/i, '')
     .replace(/^["“]|["”]\.?$/g, '')
     .trim();
@@ -161,7 +182,11 @@ export function extractRecipeFromHtml(html, url) {
   for (const [, raw] of scripts) {
     try {
       const node = findRecipeNode(JSON.parse(raw.trim()));
-      if (node) return { recipe: normalizeJsonLdRecipe(node, url), method: 'structured' };
+      if (node) {
+        const recipe = normalizeJsonLdRecipe(node, url);
+        recipe.videoUrl ||= readVideoMeta(html) || (isVideoPageUrl(url) ? url : undefined);
+        return { recipe, method: 'structured' };
+      }
     } catch {
       // Malformed JSON-LD is common; try the next block.
     }
@@ -174,17 +199,30 @@ export function extractRecipeFromHtml(html, url) {
   return {
     recipe: {
       ...parsed,
-      title: parsed.ingredients.length && parsed.title !== 'Nov recept' ? parsed.title : title || parsed.title,
+      title: (parsed.ingredients.length && parsed.title) || title || parsed.title,
       image,
       sourceUrl: url,
+      videoUrl: isVideoPageUrl(url) ? url : readVideoMeta(html),
     },
     method: parsed.ingredients.length || parsed.steps.length ? 'caption' : 'metadata',
   };
 }
 
-const INGREDIENT_HEADING =
-  /^(sestavine|potrebujemo|potrebuje[sš]|ingredients?|you['’]?ll need|what you need|za\s+[\p{L} ]{2,25})\s*:?\s*$/iu;
-const STEP_HEADING = /^(postopek|priprava|navodila|instructions?|method|directions|steps|preparation|how to make( it)?)\s*:?\s*$/i;
+// Section headings in English, Slovenian, Croatian, German, Spanish, Portuguese, French and Italian.
+const INGREDIENT_HEADING = new RegExp(
+  '^(ingredients?|you[\'’]?ll need|what you need|sestavine|potrebujemo|potrebuje[sš]|sastojci|potrebno je|zutaten|' +
+    'ingredientes|ingrédients|ingredienti|' +
+    // Group labels such as "Za omako:", "For the sauce:", "Für den Teig:", "Para la masa:", "Pour la pâte :".
+    '(?:za|for|für|para|pour|per)\\s+[\\p{L}\'’ ]{2,25})\\s*:?\\s*$',
+  'iu',
+);
+const GROUP_LABEL = /^(za|for|für|para|pour|per)\s/i;
+const STEP_HEADING = new RegExp(
+  '^(postopek|priprava|navodila|postupak|priprema|instructions?|method|directions|steps|preparation|how to make( it)?|' +
+    'zubereitung|anleitung|preparación|elaboración|instrucciones|pasos|modo de prepar[oa]|preparo|preparação|' +
+    'préparation|étapes|instructions|preparazione|procedimento)\\s*:?\\s*$',
+  'i',
+);
 const BULLET = /^[\s•·▪●○◦*\-–—>✓✔✅☑👉➡️▶️🔸🔹🔶🔷⭐️🌟💛🧡❤️]+/u;
 const NUMBERED_STEP = /^(\d{1,2})[.)]\s+|^(korak|step)\s*\d+\s*[:.)-]?\s*/i;
 const STARTS_WITH_QUANTITY = /^(\d+([.,/]\d+)?|[½⅓⅔¼¾⅛])\s*(\p{L}{0,12}\.?\s)?/u;
@@ -213,7 +251,7 @@ export function parseRecipeText(text) {
       const heading = line.replace(BULLET, '').trim();
       section = 'ingredients';
       // Sub-headings such as "Za omako:" are kept as group labels.
-      if (/^za\s/i.test(heading) && ingredients.length) ingredients.push(heading.replace(/:?$/, ':'));
+      if (GROUP_LABEL.test(heading) && ingredients.length) ingredients.push(heading.replace(/\s*:?$/, ':'));
       continue;
     }
     if (STEP_HEADING.test(line.replace(BULLET, '').trim())) {
@@ -243,7 +281,7 @@ export function parseRecipeText(text) {
   }
 
   return {
-    title: title || 'Nov recept',
+    title: title ?? '',
     description: descriptionLines.join(' ') || undefined,
     ingredients,
     steps,

@@ -13,6 +13,15 @@ describe('parseIngredient', () => {
     ['3 stroki česna', { quantity: 3, unitKey: 'clove', name: 'česna' }],
     ['2 garlic cloves', { quantity: 2, unit: undefined, name: 'garlic cloves' }],
     ['1 large egg', { quantity: 1, unit: undefined, name: 'large egg' }],
+    ['2 EL Olivenöl', { quantity: 2, unitKey: 'tbsp', name: 'Olivenöl' }],
+    ['1 Prise Salz', { quantity: 1, unitKey: 'pinch', name: 'Salz' }],
+    ['200 g de harina', { quantity: 200, unitKey: 'g', name: 'harina' }],
+    ['2 cucharadas de azúcar', { quantity: 2, unitKey: 'tbsp', name: 'azúcar' }],
+    ["1 c. à soupe d'huile", { quantity: 1, unitKey: 'tbsp', name: 'huile' }],
+    ['2 cuillères à café de sel', { quantity: 2, unitKey: 'tsp', name: 'sel' }],
+    ['3 spicchi di aglio', { quantity: 3, unitKey: 'clove', name: 'aglio' }],
+    ['1 colher de sopa de manteiga', { quantity: 1, unitKey: 'tbsp', name: 'manteiga' }],
+    ['2 žličice šećera', { quantity: 2, unitKey: 'tsp', name: 'šećera' }],
   ])('%s', (line, expected) => {
     expect(parseIngredient(line)).toMatchObject(expected);
   });
@@ -41,6 +50,7 @@ describe('scaleIngredient', () => {
     expect(scaleIngredient('250 g moke', 2)).toBe('500 g moke');
     expect(scaleIngredient('1 1/2 cups flour', 0.5)).toBe('¾ cups flour');
     expect(scaleIngredient('2-3 jajca', 2)).toBe('4–6 jajca');
+    expect(scaleIngredient('1.2 l water', 2, '.')).toBe('2.4 l water');
   });
 
   it('keeps lines without quantity and headings', () => {

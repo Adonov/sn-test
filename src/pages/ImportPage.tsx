@@ -1,7 +1,8 @@
 import { Clipboard } from '@capacitor/clipboard';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { parseRecipeText, type RecipeDraft } from '../../shared/recipeParsing';
-import { findUrl, importRecipeFromUrl } from '../lib/importer';
+import { isVideoPageUrl, parseRecipeText, type RecipeDraft } from '../../shared/recipeParsing';
+import { useI18n } from '../i18n';
+import { findUrl, ImportError, importRecipeFromUrl } from '../lib/importer';
 import { isNative } from '../lib/platform';
 import { navigate } from '../lib/router';
 import { clearPendingShare, getPendingShare, setPendingDraft } from '../lib/store';
@@ -25,6 +26,7 @@ export function ImportPage() {
   const [url, setUrl] = useState(shared?.url ?? '');
   const [text, setText] = useState(shared && !shared.url ? shared.text : '');
   const [loading, setLoading] = useState(false);
+  const { t } = useI18n();
   const [error, setError] = useState<string>();
   // Title/image/source from a link import, merged into a later text import.
   const [pendingLink, setPendingLink] = useState<RecipeDraft>();
@@ -41,16 +43,14 @@ export function ImportPage() {
       const data = await importRecipeFromUrl(link);
       if (data.method === 'metadata') {
         // Only got a title/photo (typical for TikTok/Instagram): ask for the caption text.
-        setError(
-          'Na strani ni bilo mogoče najti sestavin. Kopiraj opis objave (caption) in ga prilepi spodaj — povezavo in sliko bomo ohranili.',
-        );
+        setError(t('import.metadataOnly'));
         setTab('text');
         setPendingLink(data.recipe);
         return;
       }
       review(data.recipe);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Uvoz ni uspel.');
+      setError(err instanceof ImportError ? t(`error.${err.code}`, err.params) : t('error.failed'));
       if (SOCIAL_HOSTS.test(link)) setTab('text');
     } finally {
       setLoading(false);
@@ -84,7 +84,7 @@ export function ImportPage() {
         setText(clip);
       }
     } catch {
-      setError('Do odložišča ni bilo mogoče dostopati. Besedilo prilepi ročno.');
+      setError(t('import.clipboardError'));
     }
   };
 
@@ -93,24 +93,25 @@ export function ImportPage() {
     const parsed = parseRecipeText(text);
     review({
       ...parsed,
-      title: parsed.title === 'Nov recept' && pendingLink ? pendingLink.title : parsed.title,
+      title: parsed.title || pendingLink?.title || '',
       image: pendingLink?.image,
       sourceUrl: pendingLink?.sourceUrl ?? (SOCIAL_HOSTS.test(url) ? url : undefined),
+      videoUrl: pendingLink?.videoUrl ?? (isVideoPageUrl(url) ? url : undefined),
     });
   };
 
   return (
     <>
       <header className="page-header">
-        <h1>Uvozi recept</h1>
+        <h1>{t('import.title')}</h1>
       </header>
 
       <div className="tabs" role="tablist">
         <button role="tab" aria-selected={tab === 'link'} className={tab === 'link' ? 'active' : ''} onClick={() => setTab('link')}>
-          🔗 S povezave
+          {t('import.tabLink')}
         </button>
         <button role="tab" aria-selected={tab === 'text'} className={tab === 'text' ? 'active' : ''} onClick={() => setTab('text')}>
-          📝 Iz besedila
+          {t('import.tabText')}
         </button>
       </div>
 
@@ -118,53 +119,46 @@ export function ImportPage() {
 
       {tab === 'link' ? (
         <form className="card" onSubmit={importLink}>
-          <p className="muted">
-            Prilepi povezavo do recepta s katerekoli spletne strani (npr. kulinarični blogi) ali objave na Instagramu, TikToku,
-            Pinterestu…
-          </p>
+          <p className="muted">{t('import.linkHelp')}</p>
           <label className="field">
-            <span>Povezava</span>
+            <span>{t('import.link')}</span>
             <input type="url" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" autoFocus />
           </label>
           <div className="action-row">
             <button className="btn primary" disabled={loading}>
-              {loading ? 'Uvažam…' : 'Uvozi'}
+              {loading ? t('import.importing') : t('import.import')}
             </button>
             <button type="button" className="btn" onClick={paste} disabled={loading}>
-              📋 Prilepi in uvozi
+              {t('import.pasteImport')}
             </button>
           </div>
         </form>
       ) : (
         <form className="card" onSubmit={importText}>
-          <p className="muted">
-            Prilepi besedilo recepta ali opis objave z družbenih omrežij. Sestavine in koraki bodo samodejno prepoznani.
-          </p>
+          <p className="muted">{t('import.textHelp')}</p>
           <label className="field">
-            <span>Besedilo recepta</span>
+            <span>{t('import.text')}</span>
             <textarea
               rows={12}
               required
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={'Bananin kruh 🍌\n\nSestavine:\n3 zrele banane\n200 g moke\n2 jajci\n\nPostopek:\n1. Banane pretlači.\n2. …'}
+              placeholder={t('import.textPlaceholder')}
             />
           </label>
           <div className="action-row">
-            <button className="btn primary">Prepoznaj recept</button>
+            <button className="btn primary">{t('import.recognize')}</button>
             <button type="button" className="btn" onClick={paste}>
-              📋 Prilepi
+              {t('import.paste')}
             </button>
           </div>
         </form>
       )}
 
       <section className="card tips">
-        <h2>Namig</h2>
+        <h2>{t('import.tipTitle')}</h2>
         <p className="muted small">
-          {isNative
-            ? 'V Instagramu, TikToku ali brskalniku tapni »Deli« → »Kopiraj povezavo«, nato tukaj »Prilepi in uvozi«. Na Androidu lahko izbereš tudi »Deli« → Forkful.'
-            : 'Na telefonu lahko aplikacijo dodaš na začetni zaslon (»Dodaj na začetni zaslon«) in recepte uvažaš kot iz običajne aplikacije.'}
+          {isNative ? t('import.tipNative') : t('import.tipWeb')}
         </p>
       </section>
     </>

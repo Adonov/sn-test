@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useI18n } from './i18n';
 import { useRoute } from './lib/router';
 import { useAppState } from './lib/store';
 import { BottomNav } from './components/BottomNav';
@@ -14,6 +16,10 @@ import { NotFound } from './components/NotFound';
 export function App() {
   const [page, id, sub] = useRoute();
   const { recipes } = useAppState();
+  const { lang } = useI18n();
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const recipe = page === 'recipe' ? recipes.find((r) => r.id === id) : undefined;
   if (page === 'recipe' && sub === 'cook' && recipe) return <CookMode recipe={recipe} />;

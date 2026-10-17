@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Modal } from '../components/Modal';
+import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
+import { RecipeVideo } from '../components/RecipeVideo';
+import { useI18n } from '../i18n';
 import { addDays, formatDay, formatMinutes, startOfWeek, toISODate } from '../lib/dates';
 import { isHeading, scaleIngredient } from '../lib/ingredients';
 import { navigate } from '../lib/router';
@@ -12,6 +15,7 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [planOpen, setPlanOpen] = useState(false);
   const [toast, setToast] = useState<string>();
+  const { t, decimal } = useI18n();
   const factor = servings / (recipe.servings || 1);
 
   const flash = (message: string) => {
@@ -31,11 +35,11 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
     // With some ingredients ticked ("I have these"), only the rest go on the list.
     const lines = recipe.ingredients.filter((_, i) => !checked.has(i));
     addRecipeToGrocery(recipe, servings, lines);
-    flash(`Dodano na nakupovalni seznam (${lines.filter((l) => !isHeading(l)).length})`);
+    flash(t('detail.addedToGrocery', { count: lines.filter((l) => !isHeading(l)).length }));
   };
 
   const remove = () => {
-    if (confirm(`Izbrišem recept »${recipe.title}«?`)) {
+    if (confirm(t('detail.confirmDelete', { title: recipe.title }))) {
       deleteRecipe(recipe.id);
       navigate('/');
     }
@@ -43,8 +47,8 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
 
   const source = httpUrl(recipe.sourceUrl);
   const time = [
-    recipe.prepMinutes && `Priprava ${formatMinutes(recipe.prepMinutes)}`,
-    recipe.cookMinutes && `Kuhanje ${formatMinutes(recipe.cookMinutes)}`,
+    recipe.prepMinutes && t('detail.prep', { time: formatMinutes(recipe.prepMinutes) }),
+    recipe.cookMinutes && t('detail.cook', { time: formatMinutes(recipe.cookMinutes) }),
   ].filter(Boolean);
 
   return (
@@ -52,18 +56,18 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
       <div className="detail-hero">
         <RecipeImage className="hero-image" src={recipe.image} title={recipe.title} />
         <div className="hero-actions">
-          <a className="icon-btn" href="#/" aria-label="Nazaj">
-            ←
+          <a className="icon-btn" href="#/" aria-label={t('detail.back')}>
+            <Icon name="back" size={20} />
           </a>
           <span className="spacer" />
-          <button className="icon-btn" onClick={() => toggleFavorite(recipe.id)} aria-label="Priljubljeno" aria-pressed={recipe.favorite}>
-            {recipe.favorite ? '♥' : '♡'}
+          <button className="icon-btn" onClick={() => toggleFavorite(recipe.id)} aria-label={t('detail.favorite')} aria-pressed={recipe.favorite}>
+            <Icon name="heart" size={20} filled={recipe.favorite} />
           </button>
-          <a className="icon-btn" href={`#/recipe/${recipe.id}/edit`} aria-label="Uredi">
-            ✎
+          <a className="icon-btn" href={`#/recipe/${recipe.id}/edit`} aria-label={t('detail.edit')}>
+            <Icon name="edit" size={20} />
           </a>
-          <button className="icon-btn" onClick={remove} aria-label="Izbriši">
-            🗑
+          <button className="icon-btn" onClick={remove} aria-label={t('detail.delete')}>
+            <Icon name="trash" size={20} />
           </button>
         </div>
       </div>
@@ -76,49 +80,49 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
           <>
             {time.length > 0 && ' · '}
             <a href={source.href} target="_blank" rel="noreferrer noopener">
-              Vir: {source.hostname.replace(/^www\./, '')}
+              {t('detail.source', { host: source.hostname.replace(/^www\./, '') })}
             </a>
           </>
         )}
       </p>
       {recipe.tags.length > 0 && (
         <div className="chips">
-          {recipe.tags.map((t) => (
-            <span key={t} className="chip static">
-              #{t}
+          {recipe.tags.map((tag) => (
+            <span key={tag} className="chip static">
+              #{tag}
             </span>
           ))}
         </div>
       )}
 
+      {recipe.videoUrl && <RecipeVideo url={recipe.videoUrl} />}
+
       <div className="action-row">
         <a className="btn primary" href={`#/recipe/${recipe.id}/cook`}>
-          👩‍🍳 Začni kuhati
+          {t('detail.startCooking')}
         </a>
         <button className="btn" onClick={() => setPlanOpen(true)}>
-          📅 V načrt
+          {t('detail.addToPlan')}
         </button>
         <button className="btn" onClick={addToGrocery}>
-          🛒 Na seznam
+          {t('detail.addToGrocery')}
         </button>
       </div>
 
       <section className="card">
         <div className="section-head">
-          <h2>Sestavine</h2>
-          <div className="stepper" aria-label="Število porcij">
-            <button onClick={() => setServings((s) => Math.max(1, s - 1))} aria-label="Manj porcij">
+          <h2>{t('detail.ingredients')}</h2>
+          <div className="stepper" aria-label={t('detail.servingsLabel')}>
+            <button onClick={() => setServings((s) => Math.max(1, s - 1))} aria-label={t('detail.fewer')}>
               −
             </button>
-            <span>
-              {servings} {servings === 1 ? 'porcija' : servings === 2 ? 'porciji' : servings < 5 ? 'porcije' : 'porcij'}
-            </span>
-            <button onClick={() => setServings((s) => s + 1)} aria-label="Več porcij">
+            <span>{t('detail.servings', { count: servings })}</span>
+            <button onClick={() => setServings((s) => s + 1)} aria-label={t('detail.more')}>
               ＋
             </button>
           </div>
         </div>
-        {checked.size > 0 && <p className="muted small">Označene sestavine (ki jih že imaš) ne bodo dodane na seznam.</p>}
+        {checked.size > 0 && <p className="muted small">{t('detail.checkedHint')}</p>}
         <ul className="ingredients">
           {recipe.ingredients.map((line, i) =>
             isHeading(line) ? (
@@ -129,7 +133,7 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
               <li key={i}>
                 <label className={checked.has(i) ? 'is-checked' : ''}>
                   <input type="checkbox" checked={checked.has(i)} onChange={() => toggle(i)} />
-                  <span>{scaleIngredient(line, factor)}</span>
+                  <span>{scaleIngredient(line, factor, decimal)}</span>
                 </label>
               </li>
             ),
@@ -138,7 +142,7 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
       </section>
 
       <section className="card">
-        <h2>Postopek</h2>
+        <h2>{t('detail.steps')}</h2>
         <ol className="steps">
           {recipe.steps.map((step, i) =>
             isHeading(step) ? (
@@ -154,7 +158,7 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
 
       {recipe.notes && (
         <section className="card">
-          <h2>Opombe</h2>
+          <h2>{t('detail.notes')}</h2>
           <p className="pre-line">{recipe.notes}</p>
         </section>
       )}
@@ -166,7 +170,7 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
           onClose={() => setPlanOpen(false)}
           onAdded={(label) => {
             setPlanOpen(false);
-            flash(`Dodano v načrt: ${label}`);
+            flash(t('detail.addedToPlan', { when: label }));
           }}
         />
       )}
@@ -190,17 +194,18 @@ function AddToPlanModal({
   onClose: () => void;
   onAdded: (label: string) => void;
 }) {
+  const { t, lang } = useI18n();
   const today = new Date();
   const [slot, setSlot] = useState<MealSlot>('dinner');
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
   const thisWeekEnd = addDays(startOfWeek(today), 6);
 
   return (
-    <Modal title="Dodaj v načrt obrokov" onClose={onClose}>
+    <Modal title={t('detail.planTitle')} onClose={onClose}>
       <div className="chips">
         {MEAL_SLOTS.map((s) => (
-          <button key={s.id} className={`chip ${slot === s.id ? 'active' : ''}`} onClick={() => setSlot(s.id)}>
-            {s.label}
+          <button key={s} className={`chip ${slot === s ? 'active' : ''}`} onClick={() => setSlot(s)}>
+            {t(`slot.${s}`)}
           </button>
         ))}
       </div>
@@ -211,10 +216,10 @@ function AddToPlanModal({
             className={`day-option ${d > thisWeekEnd ? 'next-week' : ''}`}
             onClick={() => {
               addPlanEntry(toISODate(d), slot, recipe.id, servings);
-              onAdded(`${formatDay(d)}, ${MEAL_SLOTS.find((s) => s.id === slot)!.label.toLowerCase()}`);
+              onAdded(`${formatDay(d, lang)}, ${t(`slot.${slot}`).toLowerCase()}`);
             }}
           >
-            {i === 0 ? 'Danes' : i === 1 ? 'Jutri' : formatDay(d)}
+            {i === 0 ? t('detail.today') : i === 1 ? t('detail.tomorrow') : formatDay(d, lang)}
           </button>
         ))}
       </div>

@@ -1,15 +1,20 @@
 import { Share } from '@capacitor/share';
 import { useState, type FormEvent } from 'react';
+import { Icon } from '../components/Icon';
+import { useI18n } from '../i18n';
 import { CATEGORIES, formatGroceryAmount, groceryListAsText } from '../lib/grocery';
 import { isNative } from '../lib/platform';
 import { addManualGroceryItem, clearGrocery, removeGroceryItem, toggleGroceryItem, updateGroceryItem, useAppState } from '../lib/store';
+import type { CategoryId } from '../lib/types';
 
 export function Grocery() {
   const { grocery, recipes } = useAppState();
+  const { t, decimal } = useI18n();
   const [text, setText] = useState('');
   const [copied, setCopied] = useState(false);
   const open = grocery.filter((g) => !g.checked);
   const done = grocery.filter((g) => g.checked);
+  const categoryLabel = (id: CategoryId) => t(`category.${id}`);
 
   const add = (e: FormEvent) => {
     e.preventDefault();
@@ -19,13 +24,14 @@ export function Grocery() {
   };
 
   const share = async () => {
-    const body = groceryListAsText(grocery);
+    const body = groceryListAsText(grocery, categoryLabel, decimal);
+    const title = t('grocery.title');
     if (isNative) {
-      await Share.share({ title: 'Nakupovalni seznam', text: body }).catch(() => {});
+      await Share.share({ title, text: body }).catch(() => {});
       return;
     }
     if (navigator.share) {
-      await navigator.share({ title: 'Nakupovalni seznam', text: body }).catch(() => {});
+      await navigator.share({ title, text: body }).catch(() => {});
       return;
     }
     await navigator.clipboard.writeText(body);
@@ -42,26 +48,25 @@ export function Grocery() {
   return (
     <>
       <header className="page-header">
-        <h1>Nakupovalni seznam</h1>
+        <h1>{t('grocery.title')}</h1>
         <div className="header-actions">
           <button className="btn" onClick={share} disabled={!open.length}>
-            {copied ? '✓ Kopirano' : '📤 Deli'}
+            {copied ? `✓ ${t('grocery.copied')}` : t('grocery.share')}
           </button>
         </div>
       </header>
 
       <form className="add-item" onSubmit={add}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Dodaj artikel, npr. 2 l mleka" aria-label="Nov artikel" />
-        <button className="btn primary">Dodaj</button>
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t('grocery.addPlaceholder')} aria-label={t('grocery.newItem')} />
+        <button className="btn primary">{t('grocery.add')}</button>
       </form>
 
       {grocery.length === 0 && (
         <div className="empty">
-          <p className="empty-icon">🛒</p>
-          <h2>Seznam je prazen</h2>
-          <p>Dodaj sestavine iz recepta ali ustvari seznam iz tedenskega načrta obrokov.</p>
+          <h2>{t('grocery.emptyTitle')}</h2>
+          <p className="muted">{t('grocery.emptyText')}</p>
           <a className="btn" href="#/planner">
-            Odpri načrt obrokov
+            {t('grocery.openPlanner')}
           </a>
         </div>
       )}
@@ -71,14 +76,14 @@ export function Grocery() {
         if (!items.length) return null;
         return (
           <section key={category} className="card grocery-group">
-            <h2>{category}</h2>
+            <h2>{categoryLabel(category)}</h2>
             <ul>
               {items.map((item) => (
                 <li key={item.id} className="grocery-item">
                   <label>
                     <input type="checkbox" checked={false} onChange={() => toggleGroceryItem(item.id)} />
                     <span>
-                      {formatGroceryAmount(item) && <strong>{formatGroceryAmount(item)} </strong>}
+                      {formatGroceryAmount(item, decimal) && <strong>{formatGroceryAmount(item, decimal)} </strong>}
                       {item.name}
                       {item.recipeIds.length > 0 && <small className="muted block">{recipeNames(item.recipeIds)}</small>}
                     </span>
@@ -86,15 +91,17 @@ export function Grocery() {
                   <select
                     className="category-select"
                     value={item.category}
-                    onChange={(e) => updateGroceryItem(item.id, { category: e.target.value })}
-                    aria-label="Kategorija"
+                    onChange={(e) => updateGroceryItem(item.id, { category: e.target.value as CategoryId })}
+                    aria-label={t('grocery.category')}
                   >
                     {CATEGORIES.map((c) => (
-                      <option key={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {categoryLabel(c)}
+                      </option>
                     ))}
                   </select>
-                  <button className="icon-btn small" onClick={() => removeGroceryItem(item.id)} aria-label="Odstrani">
-                    ✕
+                  <button className="icon-btn small" onClick={() => removeGroceryItem(item.id)} aria-label={t('common.remove')}>
+                    <Icon name="close" size={16} />
                   </button>
                 </li>
               ))}
@@ -106,9 +113,9 @@ export function Grocery() {
       {done.length > 0 && (
         <section className="card grocery-group done">
           <div className="section-head">
-            <h2>V košarici ({done.length})</h2>
+            <h2>{t('grocery.inCart', { count: done.length })}</h2>
             <button className="link-btn small" onClick={() => clearGrocery(true)}>
-              Počisti
+              {t('grocery.clear')}
             </button>
           </div>
           <ul>
@@ -116,7 +123,7 @@ export function Grocery() {
               <li key={item.id} className="grocery-item">
                 <label>
                   <input type="checkbox" checked onChange={() => toggleGroceryItem(item.id)} />
-                  <span>{[formatGroceryAmount(item), item.name].filter(Boolean).join(' ')}</span>
+                  <span>{[formatGroceryAmount(item, decimal), item.name].filter(Boolean).join(' ')}</span>
                 </label>
               </li>
             ))}
@@ -125,8 +132,8 @@ export function Grocery() {
       )}
 
       {grocery.length > 0 && (
-        <button className="link-btn danger center-block" onClick={() => confirm('Izbrišem celoten seznam?') && clearGrocery(false)}>
-          Izbriši celoten seznam
+        <button className="link-btn danger center-block" onClick={() => confirm(t('grocery.confirmClearAll')) && clearGrocery(false)}>
+          {t('grocery.clearAll')}
         </button>
       )}
     </>

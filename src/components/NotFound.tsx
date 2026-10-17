@@ -1,10 +1,12 @@
+import { useI18n } from '../i18n';
+
 export function NotFound() {
+  const { t } = useI18n();
   return (
     <div className="empty">
-      <p className="empty-icon">🤷</p>
-      <h2>Strani ni bilo mogoče najti</h2>
+      <h2>{t('notFound.title')}</h2>
       <a className="btn" href="#/">
-        Nazaj na recepte
+        {t('notFound.back')}
       </a>
     </div>
   );

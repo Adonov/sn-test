@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { extractRecipeFromHtml, parseDuration, parseRecipeText, stripSocialWrapper } from '../shared/recipeParsing.js';
 import { findUrl } from '../src/lib/importer';
+import { toVideoEmbed } from '../src/lib/video';
 import { findTimerSeconds } from '../src/lib/timers';
 
 describe('parseDuration', () => {
@@ -92,8 +93,33 @@ describe('parseRecipeText', () => {
   });
 });
 
+describe('parseRecipeText in other languages', () => {
+  it.each([
+    ['Zutaten:\n200 g Mehl\nZubereitung:\nVerrühren.', ['200 g Mehl'], ['Verrühren.']],
+    ['Ingredientes:\n2 huevos\nPreparación:\nBatir.', ['2 huevos'], ['Batir.']],
+    ['Ingrédients :\n2 œufs\nPréparation :\nMélanger.', ['2 œufs'], ['Mélanger.']],
+    ['Ingredienti:\n2 uova\nProcedimento:\nMescolare.', ['2 uova'], ['Mescolare.']],
+    ['Ingredientes:\n2 ovos\nModo de preparo:\nMisturar.', ['2 ovos'], ['Misturar.']],
+    ['Sastojci:\n2 jaja\nPostupak:\nIzmiješati.', ['2 jaja'], ['Izmiješati.']],
+  ])('%s', (text, ingredients, steps) => {
+    const recipe = parseRecipeText(text);
+    expect(recipe.ingredients).toEqual(ingredients);
+    expect(recipe.steps).toEqual(steps);
+  });
+
+  it('leaves the title empty when none is found', () => {
+    expect(parseRecipeText('Ingredients:\n2 eggs').title).toBe('');
+  });
+});
+
 describe('findTimerSeconds', () => {
   it.each([
+    ['20 Minuten backen', 1200],
+    ['Hornear 25 minutos', 1500],
+    ['Cuire 1 heure', 3600],
+    ['Cuocere per 10 minuti', 600],
+    ['Kuhati 2 sata', 7200],
+    ['Cozinhe 3 a 4 minutos', 180],
     ['Kuhaj 15 minut.', 900],
     ['Peci 1 uro na 180 °C.', 3600],
     ['Bake for 10-12 minutes', 600],
@@ -108,5 +134,34 @@ describe('findUrl', () => {
   it('extracts the link from shared text', () => {
     expect(findUrl('Poglej ta recept! https://www.instagram.com/reel/abc/?igsh=x.')).toBe('https://www.instagram.com/reel/abc/?igsh=x');
     expect(findUrl('brez povezave')).toBeUndefined();
+  });
+});
+
+describe('toVideoEmbed', () => {
+  it.each([
+    ['https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'],
+    ['https://youtu.be/dQw4w9WgXcQ?t=10', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'],
+    ['https://www.youtube.com/shorts/abcDEF12345', 'https://www.youtube-nocookie.com/embed/abcDEF12345'],
+    ['https://vimeo.com/123456789', 'https://player.vimeo.com/video/123456789'],
+    ['https://www.tiktok.com/@chef/video/7234567890123456789', 'https://www.tiktok.com/embed/v2/7234567890123456789'],
+    ['https://www.instagram.com/reel/C1a2b3c4d5/?igsh=x', 'https://www.instagram.com/reel/C1a2b3c4d5/embed/'],
+  ])('%s', (link, src) => {
+    expect(toVideoEmbed(link)).toMatchObject({ kind: 'iframe', src });
+  });
+
+  it('plays direct video files and rejects other links', () => {
+    expect(toVideoEmbed('https://cdn.example.com/clip.mp4')).toEqual({ kind: 'file', src: 'https://cdn.example.com/clip.mp4' });
+    expect(toVideoEmbed('https://example.com/recipe')).toBeUndefined();
+    expect(toVideoEmbed('javascript:alert(1)')).toBeUndefined();
+  });
+});
+
+describe('video on import', () => {
+  it('reads the JSON-LD video and recognizes video posts', () => {
+    const html = `<script type="application/ld+json">{"@type":"Recipe","name":"X","recipeIngredient":["1 egg"],
+      "video":{"@type":"VideoObject","embedUrl":"https://www.youtube.com/embed/abcDEF12345"}}</script>`;
+    expect(extractRecipeFromHtml(html, 'https://blog.example/x').recipe.videoUrl).toBe('https://www.youtube.com/embed/abcDEF12345');
+    const reel = extractRecipeFromHtml('<title>Reel</title>', 'https://www.instagram.com/reel/C1a2b3c4d5/');
+    expect(reel.recipe.videoUrl).toBe('https://www.instagram.com/reel/C1a2b3c4d5/');
   });
 });
