@@ -29,8 +29,23 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
     grocery: [...byId(remote.grocery, local.grocery).values()],
     diary: [...byId(remote.diary ?? [], local.diary ?? []).values()],
     nutritionGoals: local.nutritionGoals ?? remote.nutritionGoals,
+    profile: local.profile ?? remote.profile,
+    waterGoal: local.waterGoal ?? remote.waterGoal,
+    // One weight per day: the device's own reading wins for a day both have.
+    weights: [...new Map([...(remote.weights ?? []), ...(local.weights ?? [])].map((w) => [w.date, w])).values()].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    ),
+    water: mergeMax(remote.water, local.water),
+    favoriteFoods: [...byId(remote.favoriteFoods ?? [], local.favoriteFoods ?? []).values()],
     modifiedAt: Date.now(),
   };
+}
+
+/** Combines per-day counters, keeping the higher value for a day both sides have. */
+function mergeMax(a: Record<string, number> = {}, b: Record<string, number> = {}): Record<string, number> {
+  const out = { ...a };
+  for (const [day, value] of Object.entries(b)) out[day] = Math.max(out[day] ?? 0, value);
+  return out;
 }
 
 /** Which way a regular (not first) sync should go. */

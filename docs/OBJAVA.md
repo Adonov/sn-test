@@ -152,6 +152,8 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > • Watch the recipe video right inside the recipe.
   > • Track calories, protein, carbs, fat, vitamins and minerals: scan a barcode, snap a photo of your meal or just
   >   describe it, and log a serving of any recipe with one tap.
+  > • Get personal calorie and macro goals from your profile, track water and weight, and keep your streak going.
+  > • Plan your week and see each day's calories before you cook – then log planned meals with one tap.
   > • Use the app in English, German, Spanish, French, Italian, Portuguese, Slovenian or Croatian – recipes are
   >   translated automatically.
   > • Optional account to sync between your phone, tablet and computer.
@@ -174,6 +176,8 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > • Video recepta si oglej kar v receptu.
   > • Spremljaj kalorije, beljakovine, ogljikove hidrate, maščobe, vitamine in minerale: skeniraj črtno kodo,
   >   fotografiraj obrok ali ga samo opiši, porcijo recepta pa vpišeš z enim dotikom.
+  > • Osebni cilji kalorij in makrohranil iz tvojega profila, sledenje vodi in teži ter niz zaporednih dni.
+  > • Načrtuj teden in že vnaprej vidi kalorije vsakega dne – načrtovane obroke nato vpišeš z enim dotikom.
   > • Aplikacijo uporabljaj v slovenščini, hrvaščini, angleščini, nemščini, italijanščini, španščini, francoščini ali
   >   portugalščini – recepti se prevedejo samodejno.
   > • Neobvezen račun za sinhronizacijo med telefonom, tablico in računalnikom.

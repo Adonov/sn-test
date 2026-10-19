@@ -5,6 +5,7 @@ import { RecipeImage } from '../components/RecipeImage';
 import { useI18n } from '../i18n';
 import { addDays, formatDay, fromISODate, startOfWeek, toISODate } from '../lib/dates';
 import { localize } from '../lib/localize';
+import { sumNutrients } from '../lib/nutrition';
 import { navigate } from '../lib/router';
 import { addPlanEntry, addPlanToGrocery, removePlanEntry, updatePlanServings, useAppState } from '../lib/store';
 import { MEAL_SLOTS, type MealSlot } from '../lib/types';
@@ -53,9 +54,18 @@ export function Planner() {
         {days.map((day) => {
           const date = toISODate(day);
           const entries = weekEntries.filter((p) => p.date === date);
+          // One serving per planned meal, for the recipes whose nutrition is known.
+          const dayNutrition = sumNutrients(
+            entries.flatMap((p) => recipes.find((r) => r.id === p.recipeId)?.nutrition ?? []),
+          );
           return (
             <section key={date} className={`day card ${date === today ? 'today' : ''}`}>
               <h2>{formatDay(day, lang)}</h2>
+              {dayNutrition.kcal !== undefined && (
+                <p className="muted small">
+                  {t('planner.dayNutrition', { kcal: Math.round(dayNutrition.kcal), protein: Math.round(dayNutrition.protein ?? 0) })}
+                </p>
+              )}
               {MEAL_SLOTS.map((slot) => {
                 const slotEntries = entries.filter((e) => e.slot === slot);
                 const label = t(`slot.${slot}`);

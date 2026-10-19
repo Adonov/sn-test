@@ -7,7 +7,8 @@ import { toISODate } from '../lib/dates';
 import { lookupBarcode, searchFoods, type FoodProduct } from '../lib/foodDb';
 import { fileToDataUrl } from '../lib/image';
 import { localize } from '../lib/localize';
-import { scaleNutrients, type FoodLogEntry, type FoodUnit, type Nutrients } from '../lib/nutrition';
+import { scaleNutrients, type FavoriteFood, type FoodLogEntry, type FoodUnit, type Nutrients } from '../lib/nutrition';
+import { recentFoods } from '../lib/nutritionStats';
 import { estimateFoods, estimateRecipeNutrition } from '../lib/nutritionApi';
 import { navigate } from '../lib/router';
 import { scanBarcode } from '../lib/scanner';
@@ -53,7 +54,8 @@ function fromProduct(p: FoodProduct, source: Draft['source']): Draft {
 
 
 export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; slot?: string }) {
-  const { recipes } = useAppState();
+  const { recipes, diary = [], favoriteFoods = [] } = useAppState();
+  const recent = useMemo(() => recentFoods(diary), [diary]);
   const { t, lang } = useI18n();
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : toISODate(new Date());
   const [slot, setSlot] = useState<MealSlot>(MEAL_SLOTS.includes(slotParam as MealSlot) ? (slotParam as MealSlot) : slotForNow());
@@ -64,6 +66,9 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [estimated, setEstimated] = useState(false);
   const [pickingRecipe, setPickingRecipe] = useState(false);
+  // What the last AI estimate was based on, so the user can correct it.
+  const [aiInput, setAiInput] = useState<{ image?: string; text?: string; source: Draft['source'] }>();
+  const [fix, setFix] = useState('');
   const localized = useMemo(() => recipes.map((r) => localize(r, lang)), [recipes, lang]);
 
   const fail = (err: unknown) => {
@@ -97,6 +102,7 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
   const runAi = async (input: { image?: string; text?: string }, source: Draft['source']) => {
     setBusy('ai');
     setMessage(undefined);
+    setAiInput({ ...input, source });
     try {
       const items = await estimateFoods(input, lang);
       if (!items.length) return setMessage(t('add.noResults'));
@@ -164,6 +170,17 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
   const manual = () =>
     review([{ key: nextKey(), name: query.trim(), amount: '1', unit: 'serving', perUnit: { kcal: 0, protein: 0, carbs: 0, fat: 0 }, source: 'manual', manual: {} }]);
 
+  const fromSaved = (f: Omit<FavoriteFood, 'id'>) =>
+    review([{ key: nextKey(), name: f.name, amount: String(f.amount), unit: f.unit, perUnit: f.perUnit, source: 'manual' }]);
+
+  const applyFix = () => {
+    if (!aiInput || !fix.trim()) return;
+    const previous = drafts.map((d) => `${d.name} ${d.amount} ${d.unit}`).join(', ');
+    const text = [aiInput.text, `Previous estimate: ${previous}.`, `Correction from the user: ${fix.trim()}`].filter(Boolean).join('\n');
+    setFix('');
+    runAi({ image: aiInput.image, text }, aiInput.source);
+  };
+
   const update = (key: string, patch: Partial<Draft>) => setDrafts((list) => list.map((d) => (d.key === key ? { ...d, ...patch } : d)));
   const amountOf = (d: Draft) => Number(d.amount.replace(',', '.'));
   const valid = drafts.length > 0 && drafts.every((d) => d.name.trim() && amountOf(d) > 0);
@@ -202,6 +219,14 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
           <h1>{t('add.review')}</h1>
         </header>
         {estimated && <p className="notice warn">{t('add.estimated')}</p>}
+        {estimated && aiInput && (
+          <div className="add-item">
+            <input value={fix} onChange={(e) => setFix(e.target.value)} placeholder={t('add.fixPlaceholder')} aria-label={t('add.fix')} />
+            <button className="btn" onClick={applyFix} disabled={!fix.trim() || Boolean(busy)}>
+              {busy === 'ai' ? t('add.analyzing') : t('add.fix')}
+            </button>
+          </div>
+        )}
         {slotChips}
         {drafts.map((d) => {
           const amount = amountOf(d);
@@ -314,6 +339,29 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
             </li>
           ))}
         </ul>
+      )}
+
+      {[
+        { title: t('add.favorites'), items: favoriteFoods as Omit<FavoriteFood, 'id'>[] },
+        { title: t('add.recent'), items: recent },
+      ].map(
+        (group) =>
+          group.items.length > 0 &&
+          !results?.length && (
+            <section key={group.title} className="card">
+              <h2>{group.title}</h2>
+              <ul className="food-list">
+                {group.items.slice(0, 8).map((f, i) => (
+                  <li key={`${f.name}-${i}`}>
+                    <button className="food-row" onClick={() => fromSaved(f)}>
+                      <span>{f.name}</span>
+                      <span className="muted small">{Math.round((f.perUnit.kcal ?? 0) * f.amount)} kcal</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ),
       )}
 
       <div className="action-row">

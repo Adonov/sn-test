@@ -13,8 +13,14 @@ import {
   type NutrientInfo,
   type NutritionGoals,
 } from '../lib/nutrition';
-import { removeDiaryEntry, setNutritionGoals, updateDiaryEntry, useAppState } from '../lib/store';
-import { MEAL_SLOTS, type MealSlot } from '../lib/types';
+import { waterGoal } from '../lib/goals';
+import { localize } from '../lib/localize';
+import { loggingStreak } from '../lib/nutritionStats';
+import { estimateRecipeNutrition } from '../lib/nutritionApi';
+import { addDiaryEntries, addWater, removeDiaryEntry, toggleFavoriteFood, updateDiaryEntry, useAppState } from '../lib/store';
+import { MEAL_SLOTS, type MealSlot, type Recipe } from '../lib/types';
+
+const GLASS_ML = 250;
 
 const MACROS: (keyof NutritionGoals)[] = ['protein', 'carbs', 'fat'];
 
@@ -28,13 +34,17 @@ function Meter({ value, goal }: { value: number; goal: number }) {
 }
 
 export function Nutrition({ date: dateParam }: { date?: string }) {
-  const { diary = [], nutritionGoals } = useAppState();
+  const { diary = [], nutritionGoals, profile, water = {}, waterGoal: savedWaterGoal, plan, recipes } = useAppState();
   const { t, lang, decimal } = useI18n();
   const goals = nutritionGoals ?? DEFAULT_GOALS;
   const today = toISODate(new Date());
   const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : today;
   const [editing, setEditing] = useState<FoodLogEntry>();
-  const [goalsOpen, setGoalsOpen] = useState(false);
+  const [loggingPlanned, setLoggingPlanned] = useState<string>();
+  const yesterday = toISODate(addDays(fromISODate(date), -1));
+  const streak = loggingStreak(diary, today);
+  const waterMl = water[date] ?? 0;
+  const waterTarget = savedWaterGoal ?? waterGoal(profile?.weightKg);
 
   const entries = useMemo(() => diary.filter((e) => e.date === date).sort((a, b) => a.createdAt - b.createdAt), [diary, date]);
   const totals = useMemo(() => sumNutrients(entries.map(entryNutrients)), [entries]);
@@ -46,6 +56,18 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
     date === today ? t('detail.today') : date === toISODate(addDays(new Date(), -1)) ? t('nutrition.yesterday') : formatDay(fromISODate(date), lang);
   const shift = (days: number) => `#/nutrition/${toISODate(addDays(fromISODate(date), days))}`;
 
+  const logPlanned = async (recipe: Recipe, slot: MealSlot) => {
+    setLoggingPlanned(recipe.id);
+    try {
+      const perUnit = recipe.nutrition ?? (await estimateRecipeNutrition(recipe));
+      addDiaryEntries([{ date, slot, name: recipe.title, amount: 1, unit: 'serving', perUnit, source: 'recipe', recipeId: recipe.id }]);
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      setLoggingPlanned(undefined);
+    }
+  };
+
   const detailRows = NUTRIENTS.filter((n) => n.group !== 'macro' && totals[n.key] !== undefined);
 
   return (
@@ -53,9 +75,12 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
       <header className="page-header">
         <h1>{t('nutrition.title')}</h1>
         <div className="header-actions">
-          <button className="btn" onClick={() => setGoalsOpen(true)}>
+          <a className="btn" href="#/nutrition/progress">
+            {t('progress.title')}
+          </a>
+          <a className="btn" href="#/nutrition/goals">
             {t('nutrition.goals')}
-          </button>
+          </a>
           <a className="btn primary" href={`#/nutrition/add/${date}`}>
             <Icon name="plus" size={18} /> {t('nutrition.add')}
           </a>
@@ -73,6 +98,18 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
           </span>
         </a>
       </div>
+
+      {streak > 1 && date === today && <p className="center small streak">{t('streak.days', { count: streak })}</p>}
+
+      {!profile && !nutritionGoals && (
+        <section className="card notice-card">
+          <h2>{t('goals.setup')}</h2>
+          <p className="muted">{t('goals.setupText')}</p>
+          <a className="btn primary" href="#/nutrition/goals">
+            {t('goals.setup')}
+          </a>
+        </section>
+      )}
 
       <section className="card summary">
         <div className="kcal-row">
@@ -97,11 +134,40 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
         </div>
       </section>
 
+      <section className="card water">
+        <div className="section-head">
+          <h2>{t('water.title')}</h2>
+          <span className="muted small">
+            {String(Math.round(waterMl / 100) / 10).replace('.', decimal)} / {String(Math.round(waterTarget / 100) / 10).replace('.', decimal)} l
+          </span>
+        </div>
+        <div className="water-row">
+          <button className="icon-btn" onClick={() => addWater(date, -GLASS_ML)} disabled={waterMl <= 0} aria-label={t('water.remove')}>
+            −
+          </button>
+          <div className="glasses" aria-hidden>
+            {Array.from({ length: Math.max(1, Math.ceil(waterTarget / GLASS_ML)) }, (_, i) => (
+              <span key={i} className={`glass ${i < waterMl / GLASS_ML ? 'full' : ''}`} />
+            ))}
+          </div>
+          <button className="icon-btn" onClick={() => addWater(date, GLASS_ML)} aria-label={t('water.add')}>
+            <Icon name="plus" size={18} />
+          </button>
+        </div>
+      </section>
+
       {entries.length === 0 && <p className="muted center">{t('nutrition.empty')}</p>}
 
       {MEAL_SLOTS.map((slot) => {
         const slotEntries = entries.filter((e) => e.slot === slot);
         const slotKcal = sumNutrients(slotEntries.map(entryNutrients)).kcal ?? 0;
+        // Recipes planned for this meal that haven't been logged yet.
+        const planned = plan
+          .filter((p) => p.date === date && p.slot === slot && !slotEntries.some((e) => e.recipeId === p.recipeId))
+          .map((p) => recipes.find((r) => r.id === p.recipeId))
+          .filter((r): r is Recipe => Boolean(r))
+          .map((r) => localize(r, lang));
+        const yesterdays = slotEntries.length ? [] : diary.filter((e) => e.date === yesterday && e.slot === slot);
         return (
           <section key={slot} className="card meal">
             <div className="section-head">
@@ -130,6 +196,27 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
                 ))}
               </ul>
             )}
+            {planned.map((r) => (
+              <div key={r.id} className="planned-row">
+                <span>
+                  <small className="muted block">{t('diary.planned')}</small>
+                  {r.title}
+                </span>
+                <button className="btn small" disabled={loggingPlanned === r.id} onClick={() => logPlanned(r, slot)}>
+                  {loggingPlanned === r.id ? t('recipe.estimating') : t('diary.logPlanned')}
+                </button>
+              </div>
+            ))}
+            {yesterdays.length > 0 && (
+              <button
+                className="link-btn small"
+                onClick={() =>
+                  addDiaryEntries(yesterdays.map(({ id: _id, createdAt: _c, ...rest }) => ({ ...rest, date })))
+                }
+              >
+                {t('diary.copyYesterday')}
+              </button>
+            )}
           </section>
         );
       })}
@@ -156,7 +243,6 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
       )}
 
       {editing && <EntryEditor entry={editing} onClose={() => setEditing(undefined)} />}
-      {goalsOpen && <GoalsEditor goals={goals} onClose={() => setGoalsOpen(false)} />}
     </>
   );
 }
@@ -168,6 +254,8 @@ export function formatAmount(e: Pick<FoodLogEntry, 'amount' | 'unit'>, servingLa
 
 function EntryEditor({ entry, onClose }: { entry: FoodLogEntry; onClose: () => void }) {
   const { t, decimal } = useI18n();
+  const { favoriteFoods = [] } = useAppState();
+  const isFavorite = favoriteFoods.some((f) => f.name === entry.name && f.unit === entry.unit);
   const [amount, setAmount] = useState(String(entry.amount).replace('.', decimal));
   const [slot, setSlot] = useState<MealSlot>(entry.slot);
   const parsed = Number(amount.replace(',', '.'));
@@ -206,6 +294,13 @@ function EntryEditor({ entry, onClose }: { entry: FoodLogEntry; onClose: () => v
           </button>
           <button
             type="button"
+            className="btn"
+            onClick={() => toggleFavoriteFood({ name: entry.name, amount: entry.amount, unit: entry.unit, perUnit: entry.perUnit })}
+          >
+            {isFavorite ? t('add.removeFavorite') : t('add.addFavorite')}
+          </button>
+          <button
+            type="button"
             className="btn danger"
             onClick={() => {
               removeDiaryEntry(entry.id);
@@ -215,53 +310,6 @@ function EntryEditor({ entry, onClose }: { entry: FoodLogEntry; onClose: () => v
             {t('common.remove')}
           </button>
         </div>
-      </form>
-    </Modal>
-  );
-}
-
-function GoalsEditor({ goals, onClose }: { goals: NutritionGoals; onClose: () => void }) {
-  const { t } = useI18n();
-  const [form, setForm] = useState<Record<keyof NutritionGoals, string>>({
-    kcal: String(goals.kcal),
-    protein: String(goals.protein),
-    carbs: String(goals.carbs),
-    fat: String(goals.fat),
-  });
-  const save = (e: FormEvent) => {
-    e.preventDefault();
-    const num = (v: string, fallback: number) => {
-      const n = Math.round(Number(v));
-      return Number.isFinite(n) && n > 0 ? n : fallback;
-    };
-    setNutritionGoals({
-      kcal: num(form.kcal, goals.kcal),
-      protein: num(form.protein, goals.protein),
-      carbs: num(form.carbs, goals.carbs),
-      fat: num(form.fat, goals.fat),
-    });
-    onClose();
-  };
-  return (
-    <Modal title={t('nutrition.goals')} onClose={onClose}>
-      <form onSubmit={save}>
-        <div className="grid-2">
-          {(['kcal', ...MACROS] as (keyof NutritionGoals)[]).map((key) => (
-            <label key={key} className="field">
-              <span>
-                {t(`nutrient.${key}`)} ({key === 'kcal' ? 'kcal' : 'g'})
-              </span>
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={form[key]}
-                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-              />
-            </label>
-          ))}
-        </div>
-        <button className="btn primary">{t('nutrition.saveGoals')}</button>
       </form>
     </Modal>
   );

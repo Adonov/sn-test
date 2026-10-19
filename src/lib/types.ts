@@ -1,5 +1,6 @@
 import type { Language } from '../i18n/languages';
-import type { FoodLogEntry, Nutrients, NutritionGoals } from './nutrition';
+import type { Profile } from './goals';
+import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
 
 /** The translatable text of a recipe. */
 export interface RecipeText {
@@ -79,4 +80,10 @@ export interface AppState {
   /** Food diary (nutrition tracking). */
   diary?: FoodLogEntry[];
   nutritionGoals?: NutritionGoals;
+  profile?: Profile;
+  weights?: WeightEntry[];
+  /** Water drunk per day in ml, keyed by YYYY-MM-DD. */
+  water?: Record<string, number>;
+  waterGoal?: number;
+  favoriteFoods?: FavoriteFood[];
 }

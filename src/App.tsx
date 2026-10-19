@@ -15,7 +15,9 @@ import { Grocery } from './pages/Grocery';
 import { Settings } from './pages/Settings';
 import { Account } from './pages/Account';
 import { AddFood } from './pages/AddFood';
+import { Goals } from './pages/Goals';
 import { Nutrition } from './pages/Nutrition';
+import { Progress } from './pages/Progress';
 import { NotFound } from './components/NotFound';
 
 export function App() {
@@ -61,7 +63,16 @@ export function App() {
       content = <Account />;
       break;
     case 'nutrition':
-      content = id === 'add' ? <AddFood key={`${sub}-${extra}`} date={sub} slot={extra} /> : <Nutrition date={id} />;
+      content =
+        id === 'add' ? (
+          <AddFood key={`${sub}-${extra}`} date={sub} slot={extra} />
+        ) : id === 'goals' ? (
+          <Goals />
+        ) : id === 'progress' ? (
+          <Progress />
+        ) : (
+          <Nutrition date={id} />
+        );
       break;
     default:
       content = <NotFound />;

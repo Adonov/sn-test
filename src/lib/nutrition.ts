@@ -71,6 +71,22 @@ export interface FoodLogEntry {
   createdAt: number;
 }
 
+export interface WeightEntry {
+  id: string;
+  /** Local date, YYYY-MM-DD; one entry per day. */
+  date: string;
+  kg: number;
+}
+
+/** A food saved for one-tap logging. */
+export interface FavoriteFood {
+  id: string;
+  name: string;
+  amount: number;
+  unit: FoodUnit;
+  perUnit: Nutrients;
+}
+
 export interface NutritionGoals {
   kcal: number;
   protein: number;

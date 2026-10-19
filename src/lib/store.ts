@@ -5,7 +5,8 @@ import { addToGroceryList, categorize, newId, toCategoryId } from './grocery';
 import { loadSaved, save } from './persistence';
 import { SAMPLES } from './samples';
 import { localize } from './localize';
-import type { FoodLogEntry, Nutrients, NutritionGoals } from './nutrition';
+import type { Profile } from './goals';
+import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals } from './nutrition';
 import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
 
 function initialState(language?: Language): AppState {
@@ -216,8 +217,41 @@ export function removeDiaryEntry(id: string): void {
   setState((s) => ({ ...s, diary: (s.diary ?? []).filter((e) => e.id !== id) }));
 }
 
-export function setNutritionGoals(goals: NutritionGoals): void {
-  setState((s) => ({ ...s, nutritionGoals: goals }));
+export function setNutritionGoals(goals: NutritionGoals, profile?: Profile, waterGoal?: number): void {
+  setState((s) => ({ ...s, nutritionGoals: goals, profile: profile ?? s.profile, waterGoal: waterGoal ?? s.waterGoal }));
+}
+
+/** Records today's (or any day's) weight; one value per day. */
+export function logWeight(date: string, kg: number): void {
+  setState((s) => {
+    const others = (s.weights ?? []).filter((w) => w.date !== date);
+    const weights = [...others, { id: newId(), date, kg }].sort((a, b) => a.date.localeCompare(b.date));
+    // The latest weight keeps the profile (and future goal calculations) current.
+    const latest = weights[weights.length - 1];
+    return { ...s, weights, profile: s.profile ? { ...s.profile, weightKg: latest.kg } : s.profile };
+  });
+}
+
+export function removeWeight(id: string): void {
+  setState((s) => ({ ...s, weights: (s.weights ?? []).filter((w) => w.id !== id) }));
+}
+
+export function addWater(date: string, ml: number): void {
+  setState((s) => {
+    const current = s.water?.[date] ?? 0;
+    return { ...s, water: { ...s.water, [date]: Math.max(0, current + ml) } };
+  });
+}
+
+export function toggleFavoriteFood(food: Omit<FavoriteFood, 'id'>): void {
+  setState((s) => {
+    const list = s.favoriteFoods ?? [];
+    const existing = list.find((f) => f.name === food.name && f.unit === food.unit);
+    return {
+      ...s,
+      favoriteFoods: existing ? list.filter((f) => f !== existing) : [...list, { ...food, id: newId() }],
+    };
+  });
 }
 
 // ---- Meal plan ----
