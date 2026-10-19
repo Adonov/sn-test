@@ -58,7 +58,6 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
   const { entries, totals } = day;
   const kcal = totals.kcal ?? 0;
   const fmt = (value: number, info: NutrientInfo) => formatNutrient(value, info.unit, decimal);
-  const info = (key: string) => NUTRIENTS.find((n) => n.key === key)!;
 
   const dayLabel =
     date === today ? t('detail.today') : date === toISODate(addDays(new Date(), -1)) ? t('nutrition.yesterday') : formatDay(fromISODate(date), lang);
@@ -152,14 +151,14 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
             )}
           </div>
         </div>
-        <div className="macro-grid">
+        <div className="macro-rings">
           {MACROS.map((key) => (
-            <div key={key}>
-              <div className="small">{t(`nutrient.${key}`)}</div>
-              <div className="macro-value">
-                {fmt(totals[key] ?? 0, info(key))} <span className="muted small">/ {goals[key]} g</span>
-              </div>
-              <Meter value={totals[key] ?? 0} goal={goals[key]} />
+            <div key={key} className="macro-ring">
+              <Ring progress={goals[key] > 0 ? (totals[key] ?? 0) / goals[key] : 0} size={64} stroke={7} tone={key as 'protein' | 'carbs' | 'fat'}>
+                <span className="ring-value">{Math.round(totals[key] ?? 0)}</span>
+              </Ring>
+              <span className="small">{t(`nutrient.${key}`)}</span>
+              <small>/ {goals[key]} g</small>
             </div>
           ))}
         </div>

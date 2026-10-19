@@ -1,42 +1,55 @@
 :root {
-  /* Calm, minimal palette: soft sage green with a light blue secondary. */
-  --bg: #f6f9f8;
+  /* Crisp neutrals with near-black ink (primary actions) and a fresh green accent. */
+  --bg: #f4f5f3;
   --surface: #ffffff;
-  --surface-2: #eef4f2;
-  --text: #23302c;
-  --muted: #71827d;
-  --border: #e3ebe8;
-  --accent: #6aae9f;
-  --accent-strong: #3d7f71;
+  --surface-2: #eff1ee;
+  --text: #121513;
+  --muted: #6b726e;
+  --border: #e4e7e3;
+  --accent: #1f9d74;
+  --accent-strong: #137a58;
   --accent-text: #ffffff;
-  --accent-soft: #e5f2ee;
-  --blue-soft: #e6eff7;
-  --blue-strong: #4f7fa3;
+  --accent-soft: #e2f3eb;
+  --ink: #121513;
+  --ink-text: #ffffff;
+  --blue-soft: #e7eef8;
+  --blue-strong: #2a6fc0;
   /* Data marks: validated for contrast and chroma against the chart surface (see dataviz checks). */
   --chart-1: #26917b;
-  --danger: #c0564f;
-  --radius: 16px;
-  --shadow: none;
+  /* Macros (categorical, in this order): validated for CVD separation in both modes. */
+  --protein: #eb6834;
+  --carbs: #2a78d6;
+  --fat: #eda100;
+  --danger: #c8463f;
+  --radius: 20px;
+  --shadow: 0 1px 2px rgb(18 21 19 / 0.04), 0 6px 20px rgb(18 21 19 / 0.05);
   --nav-height: 64px;
+  --font-display: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #131a18;
-    --surface: #1a2321;
-    --surface-2: #212c29;
-    --text: #e5eeeb;
-    --muted: #93a49f;
-    --border: #29342f;
-    --accent: #7cbfb0;
-    --accent-strong: #93d1c3;
-    --accent-text: #10201c;
-    --accent-soft: #1e332e;
-    --blue-soft: #1c2a35;
-    --blue-strong: #94bbd9;
+    --bg: #0b0d0c;
+    --surface: #17191a;
+    --surface-2: #222526;
+    --text: #f2f4f3;
+    --muted: #9aa29e;
+    --border: #2a2e2c;
+    --accent: #3cbf90;
+    --accent-strong: #6fd8b1;
+    --accent-text: #08130e;
+    --accent-soft: #15302a;
+    --ink: #f2f4f3;
+    --ink-text: #0b0d0c;
+    --blue-soft: #1a2737;
+    --blue-strong: #8db8ec;
     --chart-1: #33a68b;
-    --danger: #e8877f;
+    --protein: #d95926;
+    --carbs: #3987e5;
+    --fat: #c98500;
+    --danger: #ec8a82;
+    --shadow: none;
     color-scheme: dark;
   }
 }
@@ -1982,4 +1995,178 @@ input.switch:checked::after {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0;
+}
+
+/* ---- Look & feel: bold numbers, borderless cards, ink buttons ---- */
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-weight: 650;
+}
+
+.card {
+  border-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    border-color: var(--border);
+  }
+}
+
+.btn {
+  font-weight: 600;
+  border-color: var(--border);
+}
+
+.btn.primary {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-color: var(--ink);
+}
+
+.btn.primary:hover:not(:disabled) {
+  opacity: 0.88;
+  border-color: var(--ink);
+}
+
+.chip.active {
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+.option.active {
+  border-color: var(--ink);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.plan-card.active {
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+.plan-card.active small {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.bottom-nav {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: saturate(1.6) blur(16px);
+  -webkit-backdrop-filter: saturate(1.6) blur(16px);
+}
+
+.bottom-nav a.active {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.ring-value,
+.kcal-value,
+.hero-stat b,
+.macro-value,
+.plan-card b,
+.fast-time b,
+.stat-row b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ring-value {
+  font-size: 2.3rem;
+}
+
+.ring-fill {
+  stroke: var(--chart-1);
+}
+
+.ring.tone-protein .ring-fill {
+  stroke: var(--protein);
+}
+
+.ring.tone-carbs .ring-fill {
+  stroke: var(--carbs);
+}
+
+.ring.tone-fat .ring-fill {
+  stroke: var(--fat);
+}
+
+/* Macro rings in the diary hero (labels and grams are always written out). */
+.macro-rings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.macro-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0.25rem;
+  border-radius: 16px;
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.macro-ring .ring-value {
+  font-size: 0.95rem;
+}
+
+.macro-ring small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.meter.tone-protein div {
+  background: var(--protein);
+}
+
+.meter.tone-carbs div {
+  background: var(--carbs);
+}
+
+.meter.tone-fat div {
+  background: var(--fat);
+}
+
+.notice {
+  border-radius: 14px;
+}
+
+.welcome-logo {
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+.plan-kcal .kcal-value {
+  color: var(--text);
+}
+
+.fuel-card {
+  border-color: var(--accent);
+}
+
+.fuel-item.active {
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+.fuel-item.active .muted,
+.fuel-item.active .fuel-count {
+  color: inherit;
+}
+
+input.switch:checked {
+  background: var(--accent);
 }

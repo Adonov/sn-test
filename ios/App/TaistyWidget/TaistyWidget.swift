@@ -90,13 +90,16 @@ struct Provider: TimelineProvider {
 
 // MARK: - Style
 
-private let accent = Color(red: 0.24, green: 0.50, blue: 0.44)
-private let accentSoft = Color(red: 0.42, green: 0.68, blue: 0.62)
-private let blue = Color(red: 0.33, green: 0.55, blue: 0.75)
+private let accent = Color(red: 0.15, green: 0.57, blue: 0.48)
+// Macro colors match the app (validated for colour-blind separation).
+private let proteinColor = Color(red: 0.92, green: 0.41, blue: 0.20)
+private let carbsColor = Color(red: 0.16, green: 0.47, blue: 0.84)
+private let fatColor = Color(red: 0.93, green: 0.63, blue: 0.0)
+private let blue = Color(red: 0.16, green: 0.44, blue: 0.75)
 private let background = Color(UIColor { traits in
     traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.09, green: 0.12, blue: 0.11, alpha: 1)
-        : UIColor(red: 0.965, green: 0.976, blue: 0.973, alpha: 1)
+        ? UIColor(red: 0.09, green: 0.10, blue: 0.10, alpha: 1)
+        : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
 })
 
 extension View {
@@ -161,7 +164,7 @@ struct CaloriesView: View {
     var leftText: some View {
         let s = entry.snapshot
         return VStack(spacing: 0) {
-            Text("\(abs(s.left))").font(.title2.weight(.semibold).monospacedDigit()).minimumScaleFactor(0.6)
+            Text("\(abs(s.left))").font(.system(.title2, design: .rounded).weight(.bold).monospacedDigit()).minimumScaleFactor(0.6)
             Text(s.left >= 0 ? s.label("left", "kcal left") : s.label("over", "kcal over"))
                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
         }
@@ -190,9 +193,9 @@ struct CaloriesView: View {
                 Ring(progress: s.progress, color: accent, lineWidth: 11) { leftText }
                     .padding(4)
                 VStack(alignment: .leading, spacing: 8) {
-                    MacroBar(name: s.label("protein", "Protein"), values: s.protein, color: accent)
-                    MacroBar(name: s.label("carbs", "Carbs"), values: s.carbs, color: accentSoft)
-                    MacroBar(name: s.label("fat", "Fat"), values: s.fat, color: blue)
+                    MacroBar(name: s.label("protein", "Protein"), values: s.protein, color: proteinColor)
+                    MacroBar(name: s.label("carbs", "Carbs"), values: s.carbs, color: carbsColor)
+                    MacroBar(name: s.label("fat", "Fat"), values: s.fat, color: fatColor)
                     HStack {
                         Text(s.label("water", "Water")).font(.caption2).foregroundStyle(.secondary)
                         Spacer()

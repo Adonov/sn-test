@@ -11,7 +11,7 @@ export function Ring({
   progress: number;
   size?: number;
   stroke?: number;
-  tone?: 'accent' | 'blue' | 'over';
+  tone?: 'accent' | 'blue' | 'over' | 'protein' | 'carbs' | 'fat';
   children?: ReactNode;
 }) {
   const r = (size - stroke) / 2;
