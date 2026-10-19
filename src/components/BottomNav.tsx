@@ -13,7 +13,8 @@ export function BottomNav({ active }: { active: string }) {
   const { grocery } = useAppState();
   const { t } = useI18n();
   const open = grocery.filter((g) => !g.checked).length;
-  const current = active === 'recipe' || active === 'new' || active === 'import' ? 'library' : active;
+  const current =
+    active === 'recipe' || active === 'new' || active === 'import' ? 'library' : active === 'account' ? 'settings' : active;
   return (
     <nav className="bottom-nav" aria-label={t('nav.label')}>
       <div className="brand">

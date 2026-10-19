@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
+import { cloudConfigured, useAccount } from '../lib/cloud';
 import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 
 export function Settings() {
   const { recipes, plan } = useAppState();
   const { t, lang } = useI18n();
+  const { user } = useAccount();
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string>();
 
@@ -33,6 +35,16 @@ export function Settings() {
         <h1>{t('settings.title')}</h1>
       </header>
 
+      {cloudConfigured && (
+        <section className="card">
+          <h2>{t('account.title')}</h2>
+          {user && <p className="muted">{t('account.signedInAs', { email: user.email ?? '' })}</p>}
+          <a className={`btn ${user ? '' : 'primary'}`} href="#/account">
+            {user ? t('account.title') : t('account.cta')}
+          </a>
+        </section>
+      )}
+
       <section className="card">
         <h2>{t('settings.language')}</h2>
         <div className="language-grid" role="radiogroup" aria-label={t('settings.language')}>
@@ -55,8 +67,12 @@ export function Settings() {
         <h2>{t('settings.data')}</h2>
         <p className="muted">
           {t('settings.counts', { recipes: recipes.length, meals: plan.length })}
-          <br />
-          {t('settings.dataStored')}
+          {!user && (
+            <>
+              <br />
+              {t('settings.dataStored')}
+            </>
+          )}
         </p>
         <div className="action-row">
           <button className="btn" onClick={download}>

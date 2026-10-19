@@ -13,6 +13,8 @@ initStore().then(() =>
   ),
 );
 
+import('./lib/cloud').then((m) => m.setupCloud());
+
 if (isNative) {
   import('./lib/native').then((m) => m.setupNative());
 } else if ('serviceWorker' in navigator && import.meta.env.PROD) {

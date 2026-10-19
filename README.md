@@ -27,6 +27,9 @@ načrtuj obroke za cel teden in iz načrta samodejno sestavi nakupovalni seznam.
   izbranem jeziku. Prevaja Claude (Anthropic) na strežniku (`server/translate.js`); prevodi se shranijo na napravi,
   zato se vsak recept v posamezen jezik prevede samo enkrat. Izvirnik ostane shranjen. Vzorčni recepti imajo
   ročno napisane prevode.
+- **Računi in sinhronizacija** (neobvezno) – prijava z e-pošto in geslom prek [Supabase](https://supabase.com);
+  recepti, načrt in nakupovalni seznam se sinhronizirajo med napravami. Ob prvi prijavi se podatki z naprave
+  združijo s podatki računa. Račun lahko izbrišeš v aplikaciji (zahteva App Store).
 - **Videi v receptu** – YouTube, TikTok, Instagram Reels, Vimeo ali neposredna povezava do videa se predvajajo
   znotraj recepta. Pri uvozu se video doda samodejno, če ga stran ali objava vsebuje.
 
@@ -93,6 +96,16 @@ iOS različico za simulator; obe najdeš med »Artifacts« pri posameznem zagonu
    pred gradnjo aplikacije.
 
 Brez ključa aplikacija deluje normalno, recepti pa ostanejo v izvirnem jeziku.
+
+## Nastavitev računov (Supabase)
+
+1. Na [supabase.com](https://supabase.com) ustvari brezplačen projekt.
+2. **SQL Editor → New query**: prilepi vsebino `supabase/schema.sql` in klikni **Run**.
+3. **Project Settings → API**: v `.env` vpiši `VITE_SUPABASE_URL` (Project URL) in `VITE_SUPABASE_ANON_KEY`
+   (ključ *anon* / *publishable* – ta je namenjen javni rabi; ključa *service_role* nikoli ne vpisuj v aplikacijo).
+4. `npm run build && npx cap sync ios`.
+
+Brez teh nastavitev aplikacija deluje kot prej, samo brez računov.
 
 ## Zgradba
 

@@ -66,8 +66,10 @@ export interface GroceryItem {
 
 export interface AppState {
   version: 1;
-  /** Chosen UI language; undefined follows the device language. */
+  /** Chosen UI language; undefined follows the device language. Not synced between devices. */
   language?: Language;
+  /** When the data last changed on any device; decides which copy wins when syncing. */
+  modifiedAt?: number;
   recipes: Recipe[];
   plan: PlanEntry[];
   grocery: GroceryItem[];

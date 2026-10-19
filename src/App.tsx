@@ -13,6 +13,7 @@ import { CookMode } from './pages/CookMode';
 import { Planner } from './pages/Planner';
 import { Grocery } from './pages/Grocery';
 import { Settings } from './pages/Settings';
+import { Account } from './pages/Account';
 import { NotFound } from './components/NotFound';
 
 export function App() {
@@ -53,6 +54,9 @@ export function App() {
       break;
     case 'settings':
       content = <Settings />;
+      break;
+    case 'account':
+      content = <Account />;
       break;
     default:
       content = <NotFound />;

@@ -66,13 +66,27 @@ export function localizeSamples(s: AppState, language: Language): AppState {
 
 const listeners = new Set<() => void>();
 
-function setState(update: (s: AppState) => AppState): void {
-  state = update(state);
+/** Called after every local change (not after applying synced data). */
+const changeListeners = new Set<() => void>();
+
+export function onLocalChange(listener: () => void): () => void {
+  changeListeners.add(listener);
+  return () => changeListeners.delete(listener);
+}
+
+function setState(update: (s: AppState) => AppState, fromSync = false): void {
+  state = fromSync ? update(state) : { ...update(state), modifiedAt: Date.now() };
   if (!save(JSON.stringify(state))) {
     // Imported lazily to avoid a circular import (i18n reads the store).
     import('../i18n').then(({ translate }) => alert(translate(state.language ?? detectLanguage(), 'store.quotaFull')));
   }
   listeners.forEach((l) => l());
+  if (!fromSync) changeListeners.forEach((l) => l());
+}
+
+/** Replaces the data with a copy from the cloud, keeping this device's language. */
+export function applySyncedState(remote: AppState): void {
+  setState((s) => localizeSamples({ ...migrate(remote), language: s.language }, s.language ?? detectLanguage()), true);
 }
 
 export function useAppState(): AppState {
