@@ -14,8 +14,10 @@ dependencies {
     implementation project(':capacitor-barcode-scanner')
     implementation project(':capacitor-clipboard')
     implementation project(':capacitor-filesystem')
+    implementation project(':capacitor-local-notifications')
     implementation project(':capacitor-share')
     implementation project(':capacitor-splash-screen')
+    implementation project(':capgo-capacitor-health')
     implementation project(':capgo-capacitor-share-target')
 
 }

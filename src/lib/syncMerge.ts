@@ -37,7 +37,21 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
     ),
     water: mergeMax(remote.water, local.water),
     favoriteFoods: [...byId(remote.favoriteFoods ?? [], local.favoriteFoods ?? []).values()],
+    fasting: mergeFasting(local, remote),
+    onboardedAt: local.onboardedAt ?? remote.onboardedAt,
+    device: local.device,
     modifiedAt: Date.now(),
+  };
+}
+
+function mergeFasting(local: AppState, remote: AppState): AppState['fasting'] {
+  const l = local.fasting;
+  const r = remote.fasting;
+  if (!l || !r) return l ?? r;
+  return {
+    planHours: l.planHours,
+    start: l.start ?? r.start,
+    history: [...byId(r.history, l.history).values()].sort((a, b) => a.start - b.start),
   };
 }
 

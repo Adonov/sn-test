@@ -1,14 +1,17 @@
 import { useRef, useState } from 'react';
+import { Icon } from '../components/Icon';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
 import { cloudConfigured, useAccount } from '../lib/cloud';
 import { API_BASE } from '../lib/api';
+import { isNative } from '../lib/platform';
+import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
+import { healthName } from './Health';
 
 // The privacy policy is served by the same server the apps use for translations.
 const PRIVACY_URL = `${API_BASE ?? ''}/privacy.html`;
-import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 
 export function Settings() {
-  const { recipes, plan } = useAppState();
+  const { recipes, plan, device } = useAppState();
   const { t, lang } = useI18n();
   const { user } = useAccount();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -48,6 +51,33 @@ export function Settings() {
           </a>
         </section>
       )}
+
+      <section className="card">
+        <h2>{t('settings.tracking')}</h2>
+        <nav className="link-list">
+          <a href="#/nutrition/goals">
+            <span>{t('goals.title')}</span>
+            <Chevron />
+          </a>
+          <a href="#/fasting">
+            <span>{t('fasting.title')}</span>
+            <Chevron />
+          </a>
+          <a href="#/reminders">
+            <span>{t('reminders.title')}</span>
+            <Chevron />
+          </a>
+          {isNative && (
+            <a href="#/health">
+              <span>
+                {healthName()}
+                {device?.health?.enabled && <small className="muted block">{t('health.on')}</small>}
+              </span>
+              <Chevron />
+            </a>
+          )}
+        </nav>
+      </section>
 
       <section className="card">
         <h2>{t('settings.language')}</h2>
@@ -103,5 +133,13 @@ export function Settings() {
         </a>
       </p>
     </>
+  );
+}
+
+function Chevron() {
+  return (
+    <span className="flip muted" aria-hidden>
+      <Icon name="back" size={18} />
+    </span>
   );
 }

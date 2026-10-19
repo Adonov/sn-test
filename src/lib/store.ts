@@ -5,9 +5,12 @@ import { addToGroceryList, categorize, newId, toCategoryId } from './grocery';
 import { loadSaved, save } from './persistence';
 import { SAMPLES } from './samples';
 import { localize } from './localize';
+import { DEFAULT_FAST_HOURS, type FastingState } from './fasting';
 import type { Profile } from './goals';
-import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals } from './nutrition';
-import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
+import { mergeScaleWeights, type HealthData } from './health';
+import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
+import type { ReminderSettings } from './reminders';
+import type { AppState, DeviceState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
 
 function initialState(language?: Language): AppState {
   const now = Date.now();
@@ -86,9 +89,17 @@ function setState(update: (s: AppState) => AppState, fromSync = false): void {
   if (!fromSync) changeListeners.forEach((l) => l());
 }
 
-/** Replaces the data with a copy from the cloud, keeping this device's language. */
+/** Changes device-only data: it isn't synced, so it doesn't count as a change to the account's data. */
+function setDevice(update: (d: DeviceState) => DeviceState): void {
+  setState((s) => ({ ...s, device: update(s.device ?? {}) }), true);
+}
+
+/** Replaces the data with a copy from the cloud, keeping this device's language and settings. */
 export function applySyncedState(remote: AppState): void {
-  setState((s) => localizeSamples({ ...migrate(remote), language: s.language }, s.language ?? detectLanguage()), true);
+  setState(
+    (s) => localizeSamples({ ...migrate(remote), language: s.language, device: s.device }, s.language ?? detectLanguage()),
+    true,
+  );
 }
 
 export function useAppState(): AppState {
@@ -101,6 +112,12 @@ export function useAppState(): AppState {
   );
 }
 
+/** Runs after every change, local or synced. */
+export function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 export function getState(): AppState {
   return state;
 }
@@ -109,6 +126,66 @@ export function getState(): AppState {
 
 export function setLanguage(language: Language): void {
   setState((s) => localizeSamples({ ...s, language }, language));
+}
+
+export function finishOnboarding(): void {
+  setState((s) => ({ ...s, onboardedAt: Date.now() }));
+}
+
+export function setReminders(reminders: ReminderSettings): void {
+  setDevice((d) => ({ ...d, reminders }));
+}
+
+export function setHealthSettings(patch: Partial<NonNullable<DeviceState['health']>>): void {
+  setDevice((d) => ({ ...d, health: { enabled: false, addExercise: true, ...d.health, ...patch } }));
+}
+
+/** Stores activity read from Apple Health / Health Connect and adds new smart-scale weights. */
+export function applyHealthData(data: HealthData): void {
+  setDevice((d) => ({
+    ...d,
+    activity: { ...d.activity, ...data.activity },
+    health: { enabled: true, addExercise: true, ...d.health, lastSync: Date.now() },
+  }));
+  const weights = mergeScaleWeights(state.weights ?? [], data.weights, newId);
+  if (weights) {
+    setState((s) => {
+      const latest = weights[weights.length - 1];
+      return { ...s, weights, profile: s.profile ? { ...s.profile, weightKg: latest.kg } : s.profile };
+    });
+  }
+}
+
+// ---- Fasting ----
+
+const fastingOf = (s: AppState): FastingState => s.fasting ?? { planHours: DEFAULT_FAST_HOURS, history: [] };
+
+export function setFastingPlan(planHours: number): void {
+  setState((s) => ({ ...s, fasting: { ...fastingOf(s), planHours } }));
+}
+
+export function startFast(start = Date.now()): void {
+  setState((s) => ({ ...s, fasting: { ...fastingOf(s), start } }));
+}
+
+/** Moves the start of the running fast (e.g. "I stopped eating at 20:00"). */
+export function setFastStart(start: number): void {
+  setState((s) => (s.fasting?.start ? { ...s, fasting: { ...s.fasting, start: Math.min(start, Date.now()) } } : s));
+}
+
+export function endFast(end = Date.now()): void {
+  setState((s) => {
+    const f = fastingOf(s);
+    if (!f.start) return s;
+    const record = { id: newId(), start: f.start, end: Math.max(end, f.start), targetHours: f.planHours };
+    // Very short fasts are usually a mis-tap; they aren't kept.
+    const history = end - f.start >= 3_600_000 ? [...f.history, record].slice(-200) : f.history;
+    return { ...s, fasting: { ...f, start: undefined, history } };
+  });
+}
+
+export function removeFast(id: string): void {
+  setState((s) => ({ ...s, fasting: { ...fastingOf(s), history: fastingOf(s).history.filter((f) => f.id !== id) } }));
 }
 
 // ---- Recipes ----
@@ -225,7 +302,7 @@ export function setNutritionGoals(goals: NutritionGoals, profile?: Profile, wate
 export function logWeight(date: string, kg: number): void {
   setState((s) => {
     const others = (s.weights ?? []).filter((w) => w.date !== date);
-    const weights = [...others, { id: newId(), date, kg }].sort((a, b) => a.date.localeCompare(b.date));
+    const weights = [...others, { id: newId(), date, kg } as WeightEntry].sort((a, b) => a.date.localeCompare(b.date));
     // The latest weight keeps the profile (and future goal calculations) current.
     const latest = weights[weights.length - 1];
     return { ...s, weights, profile: s.profile ? { ...s.profile, weightKg: latest.kg } : s.profile };
@@ -333,9 +410,9 @@ export function importBackup(json: string): void {
   if (parsed.version !== 1 || !Array.isArray(parsed.recipes) || !Array.isArray(parsed.plan) || !Array.isArray(parsed.grocery)) {
     throw new Error('invalid_backup');
   }
-  setState((s) => ({ ...migrate(parsed), language: parsed.language ?? s.language }));
+  setState((s) => ({ ...migrate(parsed), language: parsed.language ?? s.language, device: s.device }));
 }
 
 export function resetAll(): void {
-  setState((s) => initialState(s.language));
+  setState((s) => ({ ...initialState(s.language), device: s.device }));
 }

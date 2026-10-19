@@ -1,6 +1,7 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
+import { Ring } from '../components/Ring';
 import { useI18n } from '../i18n';
 import { addDays, formatDay, fromISODate, toISODate } from '../lib/dates';
 import {
@@ -19,6 +20,10 @@ import { loggingStreak } from '../lib/nutritionStats';
 import { estimateRecipeNutrition } from '../lib/nutritionApi';
 import { addDiaryEntries, addWater, removeDiaryEntry, toggleFavoriteFood, updateDiaryEntry, useAppState } from '../lib/store';
 import { MEAL_SLOTS, type MealSlot, type Recipe } from '../lib/types';
+import { DEFAULT_FAST_HOURS, fastStatus, formatDuration } from '../lib/fasting';
+import { syncHealth } from '../lib/healthSync';
+import { daySummary } from '../lib/today';
+import { useNow } from '../lib/useNow';
 
 const GLASS_ML = 250;
 
@@ -34,7 +39,8 @@ function Meter({ value, goal }: { value: number; goal: number }) {
 }
 
 export function Nutrition({ date: dateParam }: { date?: string }) {
-  const { diary = [], nutritionGoals, profile, water = {}, waterGoal: savedWaterGoal, plan, recipes } = useAppState();
+  const appState = useAppState();
+  const { diary = [], nutritionGoals, profile, water = {}, waterGoal: savedWaterGoal, plan, recipes } = appState;
   const { t, lang, decimal } = useI18n();
   const goals = nutritionGoals ?? DEFAULT_GOALS;
   const today = toISODate(new Date());
@@ -46,8 +52,8 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
   const waterMl = water[date] ?? 0;
   const waterTarget = savedWaterGoal ?? waterGoal(profile?.weightKg);
 
-  const entries = useMemo(() => diary.filter((e) => e.date === date).sort((a, b) => a.createdAt - b.createdAt), [diary, date]);
-  const totals = useMemo(() => sumNutrients(entries.map(entryNutrients)), [entries]);
+  const day = useMemo(() => daySummary(appState, date), [appState, date]);
+  const { entries, totals } = day;
   const kcal = totals.kcal ?? 0;
   const fmt = (value: number, info: NutrientInfo) => formatNutrient(value, info.unit, decimal);
   const info = (key: string) => NUTRIENTS.find((n) => n.key === key)!;
@@ -67,6 +73,10 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
       setLoggingPlanned(undefined);
     }
   };
+
+  useEffect(() => {
+    syncHealth();
+  }, []);
 
   const detailRows = NUTRIENTS.filter((n) => n.group !== 'macro' && totals[n.key] !== undefined);
 
@@ -111,16 +121,30 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
         </section>
       )}
 
-      <section className="card summary">
-        <div className="kcal-row">
-          <div>
-            <div className="kcal-value">{Math.round(kcal)}</div>
-            <div className="muted small">
-              / {goals.kcal} kcal · {kcal > goals.kcal ? t('nutrition.over', { value: Math.round(kcal - goals.kcal) }) : t('nutrition.left', { value: Math.round(goals.kcal - kcal) })}
-            </div>
+      <section className="card hero">
+        <div className="hero-row">
+          <div className="hero-stat">
+            <b>{Math.round(kcal)}</b>
+            <small className="muted">{t('nutrition.eaten')}</small>
+          </div>
+          <Ring progress={day.budget > 0 ? kcal / day.budget : 0} tone={day.left < 0 ? 'over' : 'accent'}>
+            <div className="ring-value">{Math.abs(Math.round(day.left))}</div>
+            <div className="ring-label">{day.left < 0 ? t('widget.over') : t('widget.left')}</div>
+          </Ring>
+          <div className="hero-stat">
+            {day.activity ? (
+              <>
+                <b>{Math.round(day.burned)}</b>
+                <small className="muted">{t('nutrition.burned')}</small>
+              </>
+            ) : (
+              <>
+                <b>{goals.kcal}</b>
+                <small className="muted">{t('nutrition.goal')}</small>
+              </>
+            )}
           </div>
         </div>
-        <Meter value={kcal} goal={goals.kcal} />
         <div className="macro-grid">
           {MACROS.map((key) => (
             <div key={key}>
@@ -132,7 +156,15 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
             </div>
           ))}
         </div>
+        {day.activity && (
+          <a className="activity-line" href="#/health">
+            <span>{t('health.stepsCount', { count: (day.activity.steps ?? 0).toLocaleString(lang) })}</span>
+            {(day.activity.exerciseMinutes ?? 0) > 0 && <span>{t('health.exerciseLine', { minutes: day.activity.exerciseMinutes ?? 0, kcal: day.activity.exerciseKcal ?? 0 })}</span>}
+          </a>
+        )}
       </section>
+
+      {date === today && <FastingCard />}
 
       <section className="card water">
         <div className="section-head">
@@ -244,6 +276,30 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
 
       {editing && <EntryEditor entry={editing} onClose={() => setEditing(undefined)} />}
     </>
+  );
+}
+
+function FastingCard() {
+  const { fasting } = useAppState();
+  const { t } = useI18n();
+  const now = useNow(30_000, Boolean(fasting?.start));
+  const hours = fasting?.planHours ?? DEFAULT_FAST_HOURS;
+  const status = fasting?.start ? fastStatus(fasting.start, hours, now) : undefined;
+  return (
+    <a className="card fasting-card" href="#/fasting">
+      <Ring progress={status?.progress ?? 0} size={52} stroke={6} tone="blue" />
+      <span className="grow">
+        <b>{status ? t('fasting.title') : t('fasting.cardTitle')}</b>
+        <small className="muted block">
+          {status
+            ? status.done
+              ? t('fasting.goalReached')
+              : t('fasting.remaining', { time: formatDuration(status.remainingMs, false) })
+            : t('fasting.cardText', { plan: `${hours}:${24 - hours}` })}
+        </small>
+      </span>
+      <span className="btn small">{status ? formatDuration(status.elapsedMs, false) : t('fasting.startShort')}</span>
+    </a>
   );
 }
 

@@ -76,6 +76,8 @@ export interface WeightEntry {
   /** Local date, YYYY-MM-DD; one entry per day. */
   date: string;
   kg: number;
+  /** Set for readings imported from a smart scale via Apple Health / Health Connect. */
+  source?: 'health';
 }
 
 /** A food saved for one-tap logging. */

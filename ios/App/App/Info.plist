@@ -26,6 +26,20 @@
 	<string>Forkful uses the camera to scan barcodes and photograph meals and recipes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Forkful lets you add photos from your library to recipes and your food diary.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Forkful reads your steps, workouts and weight from Apple Health to show calories burned and keep your weight chart up to date.</string>
+	<!-- forkful:// links open the app from the home screen widgets. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.forkful.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>forkful</string>
+			</array>
+		</dict>
+	</array>
 	<!-- Only standard HTTPS is used, so App Store Connect needs no export compliance documents. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

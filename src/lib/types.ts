@@ -1,5 +1,8 @@
 import type { Language } from '../i18n/languages';
+import type { FastingState } from './fasting';
 import type { Profile } from './goals';
+import type { DayActivity, HealthSettings } from './health';
+import type { ReminderSettings } from './reminders';
 import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
 
 /** The translatable text of a recipe. */
@@ -86,4 +89,16 @@ export interface AppState {
   water?: Record<string, number>;
   waterGoal?: number;
   favoriteFoods?: FavoriteFood[];
+  fasting?: FastingState;
+  /** When the first-launch setup was finished or skipped. */
+  onboardedAt?: number;
+  /** Settings and data that belong to this device only. Not synced. */
+  device?: DeviceState;
+}
+
+export interface DeviceState {
+  reminders?: ReminderSettings;
+  health?: HealthSettings;
+  /** Steps and workouts per day (YYYY-MM-DD) read from Apple Health / Health Connect. */
+  activity?: Record<string, DayActivity>;
 }

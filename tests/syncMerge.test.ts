@@ -53,3 +53,18 @@ describe('syncDirection', () => {
     expect(syncDirection(state({ modifiedAt: 5 }), state({ modifiedAt: 5 }))).toBe('none');
   });
 });
+
+describe('mergeStates – fasting and device data', () => {
+  it('combines fasting history, keeps the running fast and never takes another device’s settings', () => {
+    const f = (id: string, start: number) => ({ id, start, end: start + 10, targetHours: 16 });
+    const local = state({
+      fasting: { planHours: 18, start: 500, history: [f('a', 1)] },
+      device: { health: { enabled: true, addExercise: false } },
+    });
+    const remote = state({ fasting: { planHours: 16, history: [f('b', 2), f('a', 1)] }, onboardedAt: 42, device: { reminders: undefined } });
+    const merged = mergeStates(local, remote);
+    expect(merged.fasting).toEqual({ planHours: 18, start: 500, history: [f('a', 1), f('b', 2)] });
+    expect(merged.onboardedAt).toBe(42);
+    expect(merged.device).toEqual(local.device);
+  });
+});

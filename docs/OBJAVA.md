@@ -56,7 +56,8 @@ npx cap sync
 ```
 
 Pred vsako novo oddajo povečaj številko različice:
-- **iOS** (Xcode → App → General): *Version* `1.0` → `1.1`, *Build* `1` → `2`
+- **iOS** (Xcode → App → General): *Version* `1.0` → `1.1`, *Build* `1` → `2` – enako tudi pri cilju
+  **ForkfulWidget** (pripomoček mora imeti isto številko kot aplikacija)
 - **Android** (`android/app/build.gradle`): `versionCode 1` → `2`, `versionName "1.0"` → `"1.1"`
 
 ---
@@ -73,9 +74,17 @@ Pred vsako novo oddajo povečaj številko različice:
    platforma iOS, ime *Forkful* (če je zasedeno, npr. *Forkful – Recipe Keeper*), primarni jezik, Bundle ID,
    SKU `forkful`.
 
+4. **App Group** (za pripomočke na začetnem zaslonu): [Identifiers](https://developer.apple.com/account/resources/identifiers)
+   → **+** → *App Groups* → `group.com.forkful.app`. Nato odpri App ID `com.forkful.app` in vklopi **App Groups**
+   (izberi to skupino) ter **HealthKit**. Ustvari še drugi App ID `com.forkful.app.widget` (pripomoček) z vklopljenim
+   **App Groups** (ista skupina).
+
 ### Nalaganje
 1. `npx cap open ios`
 2. Xcode → **App → Signing & Capabilities** → *Team*: tvoj plačljivi račun, obkljukano *Automatically manage signing*.
+   Enako naredi za cilj **ForkfulWidget** (levo zgoraj izberi cilj). Če Xcode javi napako za App Group/HealthKit, klikni
+   **Try Again** ali v *Signing & Capabilities* odstrani in ponovno dodaj **App Groups** / **HealthKit** – Xcode jih tako
+   registrira sam.
 3. Zgoraj izberi **Any iOS Device (arm64)**.
 4. **Product → Archive** → ko se odpre *Organizer*: **Distribute App → App Store Connect → Upload**.
 5. Čez ~15 minut je gradnja v App Store Connect pod **TestFlight** – namesti jo na svoj iPhone z aplikacijo
@@ -88,7 +97,8 @@ Pred vsako novo oddajo povečaj številko različice:
 - **Support URL**: `https://forkful.onrender.com/privacy.html#contact`
 - **Age rating**: odgovori »None« povsod → 4+.
 - **App Review Information → Notes**: »An account is optional. All features work without signing in.
-  To test sync, create an account in More → Account.«
+  To test sync, create an account in More → Account. Apple Health: More → Apple Health → Connect. The app only reads
+  steps, workouts and weight and writes nothing. Widgets: long-press the home screen → + → Forkful.«
 
 ### App Privacy (vprašalnik v App Store Connect)
 | Podatek | Zbran? | Povezan z uporabnikom | Sledenje | Namen |
@@ -96,7 +106,8 @@ Pred vsako novo oddajo povečaj številko različice:
 | Contact Info → Email Address | Da (samo z računom) | Da | Ne | App Functionality |
 | User Content → Other User Content (recepti) | Da | Da | Ne | App Functionality |
 | User Content → Photos | Da (fotografije receptov z računom; fotografije obrokov za oceno AI) | Da | Ne | App Functionality |
-| Health & Fitness → Health (prehranski dnevnik) | Da (samo z računom) | Da | Ne | App Functionality |
+| Health & Fitness → Health (prehranski dnevnik, teža) | Da (samo z računom) | Da | Ne | App Functionality |
+| Health & Fitness → Fitness (koraki, vadbe iz Apple Health) | Ne – ostane na napravi | | | |
 | Vse ostalo (lokacija, analitika, oglasi …) | Ne | | | |
 
 Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
@@ -120,10 +131,18 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
 3. Izberi **release** → nastane `android/app/release/app-release.aab`.
 4. Play Console → **Testing → Closed testing → Create release** → naloži `.aab` (Google ponudi *Play App Signing* – sprejmi).
 
+### Health Connect (obvezno, ker aplikacija bere zdravstvene podatke)
+Play Console → **App content → Health apps**: označi kategorijo *Fitness / Nutrition* in pri vsakem dovoljenju
+(Steps, Exercise, Active calories burned, Weight) vpiši namen, npr. »Shows daily steps and adds workout calories to
+the user's calorie goal; imports weight from smart scales into the weight log.« Google pregleda obrazec pred objavo
+(lahko traja nekaj dni). Druga dovoljenja Health Connect so v `AndroidManifest.xml` odstranjena.
+
 ### Obrazci v Play Console
 - **Privacy policy**: `https://forkful.onrender.com/privacy.html`
 - **Data safety**: zbira *Email address* (Account management, neobvezno), *Other user-generated content*
-  (App functionality), *Photos* (ocena obroka z AI, se ne hrani) in *Health info* (prehranski dnevnik, samo z računom); podatki so šifrirani med prenosom; uporabnik lahko zahteva izbris (v aplikaciji).
+  (App functionality), *Photos* (ocena obroka z AI, se ne hrani), *Health info* (prehranski dnevnik in teža, samo z
+  računom) in *Fitness info* (koraki in vadbe iz Health Connect – ostanejo na napravi, zato »not collected«); podatki
+  so šifrirani med prenosom; uporabnik lahko zahteva izbris (v aplikaciji).
   Ne deli podatkov s tretjimi za oglaševanje.
 - **Content rating**: vprašalnik → kategorija *Reference/Utility*, vse »No« → Everyone.
 - **Target audience**: 13+ (ni namenjena otrokom).
@@ -152,7 +171,12 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > • Watch the recipe video right inside the recipe.
   > • Track calories, protein, carbs, fat, vitamins and minerals: scan a barcode, snap a photo of your meal or just
   >   describe it, and log a serving of any recipe with one tap.
-  > • Get personal calorie and macro goals from your profile, track water and weight, and keep your streak going.
+  > • Get personal calorie and macro goals in a one-minute setup, track water and weight, and keep your streak going.
+  > • Intermittent fasting timer with 12:12 to 20:4 plans, fasting stages and a history of your fasts.
+  > • Connect Apple Health or Health Connect: steps, workout calories added to your goal, and your weight straight
+  >   from a smart scale.
+  > • Gentle reminders for meals, water and weigh-ins – they skip themselves once you've logged.
+  > • Home screen and lock screen widgets for calories left and your fasting timer.
   > • Plan your week and see each day's calories before you cook – then log planned meals with one tap.
   > • Use the app in English, German, Spanish, French, Italian, Portuguese, Slovenian or Croatian – recipes are
   >   translated automatically.
@@ -176,7 +200,12 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > • Video recepta si oglej kar v receptu.
   > • Spremljaj kalorije, beljakovine, ogljikove hidrate, maščobe, vitamine in minerale: skeniraj črtno kodo,
   >   fotografiraj obrok ali ga samo opiši, porcijo recepta pa vpišeš z enim dotikom.
-  > • Osebni cilji kalorij in makrohranil iz tvojega profila, sledenje vodi in teži ter niz zaporednih dni.
+  > • Osebni cilji kalorij in makrohranil v minutni nastavitvi, sledenje vodi in teži ter niz zaporednih dni.
+  > • Časovnik za intermitentno postenje z načrti od 12:12 do 20:4, fazami posta in zgodovino.
+  > • Poveži Apple Health ali Health Connect: koraki, kalorije vadbe se prištejejo cilju, teža pa se vpiše kar s
+  >   pametne tehtnice.
+  > • Nežni opomniki za obroke, vodo in tehtanje – sami se preskočijo, ko že vpišeš.
+  > • Pripomočki na začetnem in zaklenjenem zaslonu za preostale kalorije in časovnik posta.
   > • Načrtuj teden in že vnaprej vidi kalorije vsakega dne – načrtovane obroke nato vpišeš z enim dotikom.
   > • Aplikacijo uporabljaj v slovenščini, hrvaščini, angleščini, nemščini, italijanščini, španščini, francoščini ali
   >   portugalščini – recepti se prevedejo samodejno.

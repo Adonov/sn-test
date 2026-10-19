@@ -64,8 +64,8 @@ async function fetchRemote(userId: string): Promise<AppState | undefined> {
 }
 
 async function push(userId: string, state: AppState) {
-  // The UI language is a per-device setting.
-  const { language: _language, ...data } = state;
+  // The UI language and device settings (reminders, Apple Health data) stay on the device.
+  const { language: _language, device: _device, ...data } = state;
   const { error } = await supabase!.from(TABLE).upsert({ user_id: userId, data, updated_at: new Date().toISOString() });
   if (error) throw error;
 }
