@@ -1,0 +1,27 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Render → New → Blueprint → pick this repository. Secrets marked "sync: false" are asked for once.
+services:
+  - type: web
+    name: forkful
+    runtime: node
+    plan: starter # always on; "free" works too but sleeps after 15 minutes without traffic
+    region: frankfurt
+    branch: claude/recime-like-app-rfrtsp
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: MAX_TRANSLATIONS_PER_DAY
+        value: "300"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # The website version gets accounts too (same values as in your .env).
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false

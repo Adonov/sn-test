@@ -199,6 +199,7 @@ export const fr: Messages = {
   'settings.restore': 'Restaurer depuis un fichier',
   'settings.restored': 'Sauvegarde restaurée.',
   'settings.invalidBackup': 'Ce fichier n’est pas une sauvegarde valide.',
+  'settings.privacy': 'Politique de confidentialité',
   'settings.reset': 'Réinitialiser',
   'settings.resetText': 'Supprime toutes les recettes, le planning et la liste de courses, et charge les recettes d’exemple.',
   'settings.resetButton': 'Supprimer toutes les données',

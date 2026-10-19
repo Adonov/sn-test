@@ -199,6 +199,7 @@ export const pt: Messages = {
   'settings.restore': 'Restaurar a partir de ficheiro',
   'settings.restored': 'Cópia de segurança restaurada.',
   'settings.invalidBackup': 'Este ficheiro não é uma cópia de segurança válida.',
+  'settings.privacy': 'Política de privacidade',
   'settings.reset': 'Repor',
   'settings.resetText': 'Elimina todas as receitas, o plano e a lista de compras, e carrega as receitas de exemplo.',
   'settings.resetButton': 'Eliminar todos os dados',

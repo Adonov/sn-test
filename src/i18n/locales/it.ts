@@ -199,6 +199,7 @@ export const it: Messages = {
   'settings.restore': 'Ripristina da file',
   'settings.restored': 'Backup ripristinato.',
   'settings.invalidBackup': 'Questo file non è un backup valido.',
+  'settings.privacy': 'Informativa sulla privacy',
   'settings.reset': 'Reimposta',
   'settings.resetText': 'Elimina tutte le ricette, il piano e la lista della spesa, e carica le ricette di esempio.',
   'settings.resetButton': 'Elimina tutti i dati',

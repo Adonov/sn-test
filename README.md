@@ -74,11 +74,8 @@ iOS različico za simulator; obe najdeš med »Artifacts« pri posameznem zagonu
 
 ### Objava v trgovinah
 
-1. V `capacitor.config.ts` (ter v Android/iOS projektu) zamenjaj `appId` `com.forkful.app` z ID-jem, ki ga imaš v lasti.
-2. **Google Play:** razvijalski račun (25 USD enkratno), v Android Studiu *Build → Generate Signed App Bundle*.
-3. **App Store:** Apple Developer Program (99 USD/leto), v Xcodu nastavi *Signing & Capabilities*, nato
-   *Product → Archive* in naloži v App Store Connect.
-4. Obe trgovini zahtevata politiko zasebnosti – aplikacija ne pošilja osebnih podatkov nikamor, vse ostane na napravi.
+Celoten postopek (strežnik na Renderju, App Store, Google Play, besedila za trgovini in odgovori na vprašalnike o
+zasebnosti) je v **[docs/OBJAVA.md](docs/OBJAVA.md)**. Politika zasebnosti je v `public/privacy.html`.
 
 ### Še ni narejeno
 

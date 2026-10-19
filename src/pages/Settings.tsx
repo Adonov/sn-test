@@ -1,6 +1,10 @@
 import { useRef, useState } from 'react';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
 import { cloudConfigured, useAccount } from '../lib/cloud';
+import { isNative } from '../lib/platform';
+
+// The privacy policy is served by the same server the apps use for translations.
+const PRIVACY_URL = `${isNative ? import.meta.env.VITE_API_URL ?? '' : ''}/privacy.html`;
 import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 
 export function Settings() {
@@ -93,6 +97,11 @@ export function Settings() {
           {t('settings.resetButton')}
         </button>
       </section>
+      <p className="center small">
+        <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
+          {t('settings.privacy')}
+        </a>
+      </p>
     </>
   );
 }

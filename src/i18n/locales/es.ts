@@ -199,6 +199,7 @@ export const es: Messages = {
   'settings.restore': 'Restaurar desde archivo',
   'settings.restored': 'Copia de seguridad restaurada.',
   'settings.invalidBackup': 'Este archivo no es una copia de seguridad válida.',
+  'settings.privacy': 'Política de privacidad',
   'settings.reset': 'Restablecer',
   'settings.resetText': 'Elimina todas las recetas, el plan y la lista de la compra, y carga las recetas de ejemplo.',
   'settings.resetButton': 'Eliminar todos los datos',

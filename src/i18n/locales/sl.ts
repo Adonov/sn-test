@@ -199,6 +199,7 @@ export const sl: Messages = {
   'settings.restore': 'Obnovi iz datoteke',
   'settings.restored': 'Varnostna kopija je obnovljena.',
   'settings.invalidBackup': 'Datoteka ni veljavna varnostna kopija.',
+  'settings.privacy': 'Politika zasebnosti',
   'settings.reset': 'Ponastavi',
   'settings.resetText': 'Izbriše vse recepte, načrt in nakupovalni seznam ter naloži primere receptov.',
   'settings.resetButton': 'Izbriši vse podatke',

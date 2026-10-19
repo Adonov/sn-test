@@ -79,18 +79,38 @@ async function fetchPage(rawUrl) {
   throw new UserError('too_many_redirects');
 }
 
-// Translation costs money per call, so each client address gets a modest budget.
+// Translation costs money per call, so each client address gets a modest budget, and the
+// whole server a daily cap (MAX_TRANSLATIONS_PER_DAY) so a flood of requests can't run up the bill.
 const RATE_WINDOW_MS = 10 * 60_000;
 const RATE_LIMIT = 60;
+const DAILY_LIMIT = Number(process.env.MAX_TRANSLATIONS_PER_DAY) || 300;
 const hits = new Map();
+let today = '';
+let translatedToday = 0;
+
+/** The caller's address. Behind a proxy (Render, Railway…) set TRUST_PROXY=1 to read X-Forwarded-For. */
+function clientAddress(req) {
+  const forwarded = process.env.TRUST_PROXY ? String(req.headers['x-forwarded-for'] ?? '') : '';
+  // The proxy appends the address it saw, so the last entry is the one that can't be spoofed.
+  return forwarded.split(',').pop().trim() || req.socket.remoteAddress || 'unknown';
+}
 
 function rateLimited(req) {
-  const key = req.socket.remoteAddress ?? 'unknown';
+  const day = new Date().toISOString().slice(0, 10);
+  if (day !== today) {
+    today = day;
+    translatedToday = 0;
+    hits.clear();
+  }
+  if (translatedToday >= DAILY_LIMIT) return true;
+  const key = clientAddress(req);
   const now = Date.now();
   const recent = (hits.get(key) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
   recent.push(now);
   hits.set(key, recent);
-  return recent.length > RATE_LIMIT;
+  if (recent.length > RATE_LIMIT) return true;
+  translatedToday++;
+  return false;
 }
 
 function readJson(req) {

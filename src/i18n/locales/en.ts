@@ -199,6 +199,7 @@ export const en = {
   'settings.restore': 'Restore from file',
   'settings.restored': 'Backup restored.',
   'settings.invalidBackup': 'This file isn’t a valid backup.',
+  'settings.privacy': 'Privacy policy',
   'settings.reset': 'Reset',
   'settings.resetText': 'Deletes all recipes, the meal plan and the grocery list, and loads the sample recipes.',
   'settings.resetButton': 'Delete all data',

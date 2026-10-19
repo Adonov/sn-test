@@ -199,6 +199,7 @@ export const hr: Messages = {
   'settings.restore': 'Vrati iz datoteke',
   'settings.restored': 'Sigurnosna kopija je vraćena.',
   'settings.invalidBackup': 'Ova datoteka nije valjana sigurnosna kopija.',
+  'settings.privacy': 'Pravila privatnosti',
   'settings.reset': 'Poništi',
   'settings.resetText': 'Briše sve recepte, plan i popis za kupovinu te učitava primjere recepata.',
   'settings.resetButton': 'Izbriši sve podatke',
