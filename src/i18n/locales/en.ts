@@ -53,6 +53,8 @@ export const en = {
   'detail.notes': 'Notes',
   'detail.addedToGrocery': 'Added to the grocery list ({count})',
   'detail.addedToPlan': 'Added to the plan: {when}',
+  'detail.translating': 'Translating…',
+  'detail.translationFailed': 'Couldn’t translate this recipe; it’s shown in its original language.',
   'detail.video': 'Video',
   'detail.watchVideo': 'Watch the video',
   'detail.planTitle': 'Add to meal plan',

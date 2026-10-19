@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
 import { useI18n } from '../i18n';
 import { addDays, formatDay, fromISODate, startOfWeek, toISODate } from '../lib/dates';
+import { localize } from '../lib/localize';
 import { navigate } from '../lib/router';
 import { addPlanEntry, addPlanToGrocery, removePlanEntry, updatePlanServings, useAppState } from '../lib/store';
 import { MEAL_SLOTS, type MealSlot } from '../lib/types';
@@ -67,8 +68,9 @@ export function Planner() {
                       </button>
                     </div>
                     {slotEntries.map((entry) => {
-                      const recipe = recipes.find((r) => r.id === entry.recipeId);
-                      if (!recipe) return null;
+                      const found = recipes.find((r) => r.id === entry.recipeId);
+                      if (!found) return null;
+                      const recipe = localize(found, lang);
                       return (
                         <div key={entry.id} className="plan-entry">
                           <a href={`#/recipe/${recipe.id}`} className="plan-entry-link">
@@ -110,7 +112,7 @@ function RecipePicker({ date, slot, onClose }: { date: string; slot: MealSlot; o
   const { t, lang } = useI18n();
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
-  const matches = recipes.filter((r) => !q || r.title.toLowerCase().includes(q) || r.tags.some((t) => t.includes(q)));
+  const matches = recipes.map((r) => localize(r, lang)).filter((r) => !q || r.title.toLowerCase().includes(q) || r.tags.some((t) => t.includes(q)));
   return (
     <Modal title={`${t(`slot.${slot}`)} · ${formatDay(fromISODate(date), lang)}`} onClose={onClose}>
       <input className="search" type="search" autoFocus placeholder={t('planner.search')} value={query} onChange={(e) => setQuery(e.target.value)} />

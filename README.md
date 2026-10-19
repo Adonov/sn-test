@@ -23,6 +23,10 @@ načrtuj obroke za cel teden in iz načrta samodejno sestavi nakupovalni seznam.
   Jezik se izbere po nastavitvah naprave in ga lahko spremeniš v »Več«. Prepoznavanje sestavin, enot (EL, cucharada,
   c. à soupe …), razdelkov receptov, časovnikov in oddelkov trgovine deluje v vseh teh jezikih. Prevodi so v
   `src/i18n/locales/`; nov jezik dodaš z novo datoteko po vzoru `en.ts`.
+- **Samodejno prevajanje receptov** – ko zamenjaš jezik, se vsi recepti (tudi uvoženi in tvoji) prikažejo v
+  izbranem jeziku. Prevaja Claude (Anthropic) na strežniku (`server/translate.js`); prevodi se shranijo na napravi,
+  zato se vsak recept v posamezen jezik prevede samo enkrat. Izvirnik ostane shranjen. Vzorčni recepti imajo
+  ročno napisane prevode.
 - **Videi v receptu** – YouTube, TikTok, Instagram Reels, Vimeo ali neposredna povezava do videa se predvajajo
   znotraj recepta. Pri uvozu se video doda samodejno, če ga stran ali objava vsebuje.
 
@@ -78,6 +82,17 @@ iOS različico za simulator; obe najdeš med »Artifacts« pri posameznem zagonu
 - **»Deli → Forkful« na iOS** zahteva Share Extension, ki jo je treba dodati v Xcodu (vtičnik
   `@capgo/capacitor-share-target` je že nameščen). Do takrat na iOS deluje »Kopiraj povezavo« → »Prilepi in uvozi«.
 - Sinhronizacija med napravami (zahteva uporabniške račune in strežnik).
+
+## Nastavitev prevajanja
+
+1. Ustvari API ključ na [console.anthropic.com](https://console.anthropic.com) (plačljivo po porabi).
+2. Kopiraj `.env.example` v `.env` in vpiši `ANTHROPIC_API_KEY=…`.
+3. Za iPhone simulator v `.env` nastavi tudi `VITE_API_URL=http://localhost:5173`, pusti `npm run dev`
+   zagnan in nato zaženi `npm run build && npx cap sync ios`.
+4. Za objavljeno aplikacijo mora strežnik (`npm start`) teči na javnem https naslovu; tega vpišeš v `VITE_API_URL`
+   pred gradnjo aplikacije.
+
+Brez ključa aplikacija deluje normalno, recepti pa ostanejo v izvirnem jeziku.
 
 ## Zgradba
 

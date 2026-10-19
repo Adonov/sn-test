@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
 import { RecipeVideo } from '../components/RecipeVideo';
 import { useI18n } from '../i18n';
+import { useTranslationStatus } from '../lib/translation';
 import { addDays, formatDay, formatMinutes, startOfWeek, toISODate } from '../lib/dates';
 import { isHeading, scaleIngredient } from '../lib/ingredients';
 import { navigate } from '../lib/router';
@@ -15,7 +16,8 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [planOpen, setPlanOpen] = useState(false);
   const [toast, setToast] = useState<string>();
-  const { t, decimal } = useI18n();
+  const { t, decimal, lang } = useI18n();
+  const translation = useTranslationStatus(recipe.id, lang);
   const factor = servings / (recipe.servings || 1);
 
   const flash = (message: string) => {
@@ -73,6 +75,11 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
       </div>
 
       <h1>{recipe.title}</h1>
+      {translation && (
+        <p className="muted small" role="status">
+          {translation === 'pending' ? t('detail.translating') : t('detail.translationFailed')}
+        </p>
+      )}
       {recipe.description && <p className="lead">{recipe.description}</p>}
       <p className="muted small">
         {time.join(' · ')}

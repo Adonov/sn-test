@@ -53,6 +53,8 @@ export const hr: Messages = {
   'detail.notes': 'Bilješke',
   'detail.addedToGrocery': 'Dodano na popis za kupovinu ({count})',
   'detail.addedToPlan': 'Dodano u plan: {when}',
+  'detail.translating': 'Prevodim…',
+  'detail.translationFailed': 'Recept nije bilo moguće prevesti pa je prikazan na izvornom jeziku.',
   'detail.video': 'Video',
   'detail.watchVideo': 'Pogledaj video',
   'detail.planTitle': 'Dodaj u plan obroka',

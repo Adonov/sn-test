@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useI18n } from './i18n';
+import { localize } from './lib/localize';
 import { useRoute } from './lib/router';
+import { useAutoTranslate } from './lib/translation';
 import { useAppState } from './lib/store';
 import { BottomNav } from './components/BottomNav';
 import { Library } from './pages/Library';
@@ -20,8 +22,11 @@ export function App() {
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+  useAutoTranslate(lang, recipes);
 
-  const recipe = page === 'recipe' ? recipes.find((r) => r.id === id) : undefined;
+  const found = page === 'recipe' ? recipes.find((r) => r.id === id) : undefined;
+  // Every screen shows recipes in the UI language (translated when needed).
+  const recipe = found && localize(found, lang);
   if (page === 'recipe' && sub === 'cook' && recipe) return <CookMode recipe={recipe} />;
 
   let content;

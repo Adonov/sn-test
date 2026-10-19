@@ -4,7 +4,8 @@ import { detectLanguage, type Language } from '../i18n/languages';
 import { addToGroceryList, categorize, newId, toCategoryId } from './grocery';
 import { loadSaved, save } from './persistence';
 import { SAMPLES } from './samples';
-import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe } from './types';
+import { localize } from './localize';
+import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
 
 function initialState(language?: Language): AppState {
   const now = Date.now();
@@ -96,6 +97,16 @@ export function setLanguage(language: Language): void {
 
 // ---- Recipes ----
 
+/** Stores a machine translation, unless the recipe was edited while it was being translated. */
+export function setRecipeTranslation(id: string, lang: Language, text: RecipeText, basedOn: number): void {
+  setState((s) => ({
+    ...s,
+    recipes: s.recipes.map((r) =>
+      r.id === id && r.updatedAt === basedOn ? { ...r, translations: { ...r.translations, [lang]: text } } : r,
+    ),
+  }));
+}
+
 export function saveRecipe(input: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' | 'favorite'> & { id?: string }): string {
   const now = Date.now();
   const id = input.id ?? newId();
@@ -105,6 +116,8 @@ export function saveRecipe(input: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' 
       ...input,
       id,
       favorite: existing?.favorite ?? false,
+      // Saved text is the new original; old translations no longer match it.
+      translations: undefined,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -194,7 +207,9 @@ export function addPlanToGrocery(from: string, to: string): number {
     for (const entry of entries) {
       const recipe = s.recipes.find((r) => r.id === entry.recipeId);
       if (!recipe) continue;
-      grocery = addToGroceryList(grocery, recipe.ingredients, entry.servings / (recipe.servings || 1), recipe.id);
+      // Grocery items are written in the language the app is shown in.
+      const { ingredients } = localize(recipe, s.language ?? detectLanguage());
+      grocery = addToGroceryList(grocery, ingredients, entry.servings / (recipe.servings || 1), recipe.id);
       count++;
     }
     return { ...s, grocery };

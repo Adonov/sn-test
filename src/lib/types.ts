@@ -1,5 +1,15 @@
 import type { Language } from '../i18n/languages';
 
+/** The translatable text of a recipe. */
+export interface RecipeText {
+  title: string;
+  description?: string;
+  ingredients: string[];
+  steps: string[];
+  notes?: string;
+  tags: string[];
+}
+
 export interface Recipe {
   id: string;
   title: string;
@@ -19,6 +29,10 @@ export interface Recipe {
   favorite: boolean;
   /** Set on built-in sample recipes; unedited samples follow the UI language. */
   sampleId?: string;
+  /** Language the recipe was written in; detected from its text when missing. */
+  lang?: Language;
+  /** Machine translations of the text, cleared whenever the recipe is edited. */
+  translations?: Partial<Record<Language, RecipeText>>;
   createdAt: number;
   updatedAt: number;
 }

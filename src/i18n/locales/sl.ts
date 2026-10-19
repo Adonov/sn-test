@@ -53,6 +53,8 @@ export const sl: Messages = {
   'detail.notes': 'Opombe',
   'detail.addedToGrocery': 'Dodano na nakupovalni seznam ({count})',
   'detail.addedToPlan': 'Dodano v načrt: {when}',
+  'detail.translating': 'Prevajam …',
+  'detail.translationFailed': 'Recepta ni bilo mogoče prevesti, zato je prikazan v izvirnem jeziku.',
   'detail.video': 'Video',
   'detail.watchVideo': 'Oglej si video',
   'detail.planTitle': 'Dodaj v načrt obrokov',

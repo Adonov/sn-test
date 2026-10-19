@@ -5,6 +5,13 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleApi } from './api.js';
 
+// Load ANTHROPIC_API_KEY etc. from .env when present (Node 20.12+).
+try {
+  process.loadEnvFile?.(fileURLToPath(new URL('../.env', import.meta.url)));
+} catch {
+  // No .env file: rely on the real environment.
+}
+
 const DIST = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const PORT = Number(process.env.PORT) || 3000;
 

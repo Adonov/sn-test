@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useI18n } from '../i18n';
 import { fileToDataUrl } from '../lib/image';
 import { navigate } from '../lib/router';
+import { detectTextLanguage } from '../lib/textLanguage';
 import { clearPendingDraft, getPendingDraft, saveRecipe } from '../lib/store';
 import type { Recipe } from '../lib/types';
 
@@ -52,7 +53,7 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
   const [draft] = useState(() => (recipe ? undefined : getPendingDraft()));
   const [form, setForm] = useState<FormState>(() => toForm(recipe ?? draft));
   const [imageError, setImageError] = useState<string>();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const isImported = Boolean(draft);
 
   useEffect(() => clearPendingDraft, []);
@@ -72,8 +73,12 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    const ingredients = lines(form.ingredients);
+    const steps = lines(form.steps);
     const id = saveRecipe({
       id: recipe?.id,
+      // Recipes are usually written in the app's language; imported ones may not be.
+      lang: detectTextLanguage([form.title, ...ingredients, ...steps].join(' ')) ?? lang,
       title: form.title.trim() || t('recipe.untitled'),
       description: form.description.trim() || undefined,
       image: form.image.trim() || undefined,
@@ -82,8 +87,8 @@ export function RecipeEditor({ recipe }: { recipe?: Recipe }) {
       servings: optionalNumber(form.servings) ?? 1,
       prepMinutes: optionalNumber(form.prepMinutes),
       cookMinutes: optionalNumber(form.cookMinutes),
-      ingredients: lines(form.ingredients),
-      steps: lines(form.steps),
+      ingredients,
+      steps,
       tags: [...new Set(form.tags.split(',').map((t) => t.trim().replace(/^#/, '').toLowerCase()).filter(Boolean))],
       notes: form.notes.trim() || undefined,
     });

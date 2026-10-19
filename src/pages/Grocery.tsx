@@ -3,13 +3,14 @@ import { useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { useI18n } from '../i18n';
 import { CATEGORIES, formatGroceryAmount, groceryListAsText } from '../lib/grocery';
+import { localize } from '../lib/localize';
 import { isNative } from '../lib/platform';
 import { addManualGroceryItem, clearGrocery, removeGroceryItem, toggleGroceryItem, updateGroceryItem, useAppState } from '../lib/store';
 import type { CategoryId } from '../lib/types';
 
 export function Grocery() {
   const { grocery, recipes } = useAppState();
-  const { t, decimal } = useI18n();
+  const { t, decimal, lang } = useI18n();
   const [text, setText] = useState('');
   const [copied, setCopied] = useState(false);
   const open = grocery.filter((g) => !g.checked);
@@ -41,7 +42,10 @@ export function Grocery() {
 
   const recipeNames = (ids: string[]) =>
     ids
-      .map((id) => recipes.find((r) => r.id === id)?.title)
+      .map((id) => {
+        const recipe = recipes.find((r) => r.id === id);
+        return recipe && localize(recipe, lang).title;
+      })
       .filter(Boolean)
       .join(', ');
 

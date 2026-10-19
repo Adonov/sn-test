@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { handleApi } from './server/api.js';
 
@@ -22,9 +22,15 @@ function apiPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), apiPlugin()],
-  test: {
-    include: ['tests/**/*.test.ts'],
-  },
+export default defineConfig(({ mode }) => {
+  // The API middleware runs in this process, so give it ANTHROPIC_API_KEY from .env as well.
+  const env = loadEnv(mode, process.cwd(), '');
+  process.env.ANTHROPIC_API_KEY ??= env.ANTHROPIC_API_KEY;
+  return {
+    plugins: [react(), apiPlugin()],
+    server: { host: true },
+    test: {
+      include: ['tests/**/*.test.ts'],
+    },
+  };
 });

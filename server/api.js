@@ -1,7 +1,9 @@
 // HTTP handlers for /api/*, shared by the Vite dev server and the production server.
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import Anthropic from '@anthropic-ai/sdk';
 import { extractRecipeFromHtml } from '../shared/recipeParsing.js';
+import { readRecipe, TranslateError, translateRecipe } from './translate.js';
 
 const MAX_BYTES = 3_000_000;
 const MAX_REDIRECTS = 5;
@@ -77,12 +79,26 @@ async function fetchPage(rawUrl) {
   throw new UserError('too_many_redirects');
 }
 
+// Translation costs money per call, so each client address gets a modest budget.
+const RATE_WINDOW_MS = 10 * 60_000;
+const RATE_LIMIT = 60;
+const hits = new Map();
+
+function rateLimited(req) {
+  const key = req.socket.remoteAddress ?? 'unknown';
+  const now = Date.now();
+  const recent = (hits.get(key) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  recent.push(now);
+  hits.set(key, recent);
+  return recent.length > RATE_LIMIT;
+}
+
 function readJson(req) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 10_000) reject(new UserError('failed'));
+      if (body.length > 50_000) reject(new UserError('failed'));
     });
     req.on('end', () => {
       try {
@@ -103,7 +119,20 @@ function send(res, status, data) {
 
 export async function handleApi(req, res) {
   const path = req.url.split('?')[0];
+  // The iOS/Android apps call the API from capacitor://localhost or https://localhost.
+  res.setHeader('access-control-allow-origin', '*');
+  res.setHeader('access-control-allow-headers', 'content-type');
+  res.setHeader('access-control-allow-methods', 'POST, GET, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    return res.end();
+  }
   try {
+    if (path === '/api/translate' && req.method === 'POST') {
+      if (rateLimited(req)) return send(res, 429, { error: 'rate_limited' });
+      const { recipe, targetLanguage } = await readJson(req);
+      return send(res, 200, { recipe: await translateRecipe(readRecipe(recipe), targetLanguage) });
+    }
     if (path === '/api/import' && req.method === 'POST') {
       const { url } = await readJson(req);
       if (typeof url !== 'string' || !url.trim()) throw new UserError('invalid_url');
@@ -114,6 +143,9 @@ export async function handleApi(req, res) {
     send(res, 404, { error: 'not_found' });
   } catch (err) {
     if (err instanceof UserError) return send(res, 400, { error: err.message, ...err.params });
+    if (err instanceof TranslateError) return send(res, err.message === 'not_configured' ? 503 : 422, { error: err.message });
+    if (err instanceof Anthropic.AuthenticationError) return send(res, 503, { error: 'not_configured' });
+    if (err instanceof Anthropic.RateLimitError) return send(res, 429, { error: 'rate_limited' });
     if (err?.code === 'ENOTFOUND') return send(res, 400, { error: 'not_found' });
     console.error('[api]', err);
     const timeout = err?.name === 'TimeoutError' || err?.name === 'AbortError';

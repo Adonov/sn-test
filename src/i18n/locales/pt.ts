@@ -53,6 +53,8 @@ export const pt: Messages = {
   'detail.notes': 'Notas',
   'detail.addedToGrocery': 'Adicionado à lista de compras ({count})',
   'detail.addedToPlan': 'Adicionado ao plano: {when}',
+  'detail.translating': 'A traduzir…',
+  'detail.translationFailed': 'Não foi possível traduzir a receita; é mostrada no idioma original.',
   'detail.video': 'Vídeo',
   'detail.watchVideo': 'Ver o vídeo',
   'detail.planTitle': 'Adicionar ao plano de refeições',

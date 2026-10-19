@@ -3,13 +3,15 @@ import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
 import { useI18n } from '../i18n';
 import { formatMinutes } from '../lib/dates';
+import { localize } from '../lib/localize';
 import { toggleFavorite, useAppState } from '../lib/store';
 
 const FAVORITES = '__favorites';
 
 export function Library() {
-  const { recipes } = useAppState();
-  const { t } = useI18n();
+  const { recipes: saved } = useAppState();
+  const { t, lang } = useI18n();
+  const recipes = useMemo(() => saved.map((r) => localize(r, lang)), [saved, lang]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<string>();
 
