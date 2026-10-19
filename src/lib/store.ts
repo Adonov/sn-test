@@ -3,12 +3,12 @@ import type { RecipeDraft } from '../../shared/recipeParsing';
 import { detectLanguage, type Language } from '../i18n/languages';
 import { addToGroceryList, categorize, newId, toCategoryId } from './grocery';
 import { loadSaved, save } from './persistence';
-import { SAMPLE_RECIPES_EN, SAMPLE_RECIPES_SL } from './samples';
+import { SAMPLES } from './samples';
 import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe } from './types';
 
 function initialState(language?: Language): AppState {
   const now = Date.now();
-  const samples = (language ?? detectLanguage()) === 'sl' ? SAMPLE_RECIPES_SL : SAMPLE_RECIPES_EN;
+  const samples = SAMPLES[language ?? detectLanguage()];
   return {
     version: 1,
     language,
@@ -26,16 +26,41 @@ export async function initStore(): Promise<void> {
     const raw = await loadSaved();
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
-      if (parsed.version === 1 && Array.isArray(parsed.recipes)) state = migrate(parsed);
+      if (parsed.version === 1 && Array.isArray(parsed.recipes)) {
+        state = localizeSamples(migrate(parsed), parsed.language ?? detectLanguage());
+      }
     }
   } catch {
     // Keep the fresh state when saved data is corrupted.
   }
 }
 
-/** Upgrades data saved by older versions (grocery categories used to be Slovenian names). */
-function migrate(saved: AppState): AppState {
-  return { ...saved, grocery: saved.grocery.map((g) => ({ ...g, category: toCategoryId(g.category) })) };
+const isUnedited = (r: Recipe) => r.updatedAt === r.createdAt;
+
+/**
+ * Upgrades data saved by older versions: grocery categories used to be Slovenian names, and
+ * sample recipes weren't marked, so unedited ones are recognized by their title.
+ */
+export function migrate(saved: AppState): AppState {
+  const sampleIdByTitle = new Map(Object.values(SAMPLES).flat().map((s) => [s.title, s.sampleId]));
+  return {
+    ...saved,
+    recipes: saved.recipes.map((r) =>
+      r.sampleId || !isUnedited(r) || !sampleIdByTitle.has(r.title) ? r : { ...r, sampleId: sampleIdByTitle.get(r.title) },
+    ),
+    grocery: saved.grocery.map((g) => ({ ...g, category: toCategoryId(g.category) })),
+  };
+}
+
+/** Rewrites sample recipes the user hasn't edited in the given language. */
+export function localizeSamples(s: AppState, language: Language): AppState {
+  return {
+    ...s,
+    recipes: s.recipes.map((r) => {
+      const sample = r.sampleId && isUnedited(r) ? SAMPLES[language].find((x) => x.sampleId === r.sampleId) : undefined;
+      return sample ? { ...r, ...sample } : r;
+    }),
+  };
 }
 
 const listeners = new Set<() => void>();
@@ -66,7 +91,7 @@ export function getState(): AppState {
 // ---- Settings ----
 
 export function setLanguage(language: Language): void {
-  setState((s) => ({ ...s, language }));
+  setState((s) => localizeSamples({ ...s, language }, language));
 }
 
 // ---- Recipes ----

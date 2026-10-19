@@ -8,14 +8,19 @@ export { CATEGORIES };
 // Lists cover English, Slovenian, German, Spanish, French, Italian, Portuguese and Croatian.
 // Spices come first so "black pepper" isn't filed under vegetables.
 const KEYWORDS: [CategoryId, string[]][] = [
+  // Coconut milk is a pantry item, not milk.
+  ['pantry', [
+    'coconut milk', 'kokosmilch', 'leche de coco', 'lait de coco', 'latte di cocco', 'leite de coco',
+    'kokosovo mleko', 'kokosovega mleka', 'kokosovo mlijeko', 'kokosovog mlijeka',
+  ]],
   ['spices', [
     'sol=', 'soli=', 'salt=', 'salz', 'sal=', 'sel=', 'sale=',
     'poper', 'papar', 'black pepper', 'pepper flakes', 'pfeffer', 'pimienta', 'poivre', 'pepe=', 'pimenta',
     'cimet', 'cinnamon', 'zimt', 'canela', 'cannella', 'cannelle',
     'paprika v prahu', 'paprikapulver', 'pimentón', 'kumin', 'cumin', 'kreuzkümmel', 'comino', 'cominho',
-    'origan', 'oregano', 'orégano', 'timijan', 'thyme', 'thymian', 'tomillo', 'thym', 'timo=', 'tomilho',
+    'origan', 'oregano', 'orégano', 'orégão', 'timijan', 'thyme', 'thymian', 'tomillo', 'thym', 'timo=', 'tomilho',
     'rožmarin', 'ružmarin', 'rosemary', 'rosmarin', 'romero', 'romarin', 'alecrim', 'kurkum', 'turmeric', 'cúrcuma',
-    'curcuma', 'curry', 'kari', 'muškatn', 'nutmeg', 'muskat', 'nuez moscada', 'muscade', 'noce moscata', 'noz-moscada',
+    'curcuma', 'curry', 'caril', 'kari', 'muškatn', 'nutmeg', 'muskat', 'nuez moscada', 'muscade', 'noce moscata', 'noz-moscada',
     'vanilij', 'vanilla', 'vanille', 'vainilla', 'vaniglia', 'baunilha', 'ketchup', 'kečap', 'gorčic', 'senf',
     'mustard', 'mostaza', 'moutarde', 'senape', 'mostarda', 'majonez', 'mayo', 'mayonnaise', 'mayonesa', 'maionese',
     'sojin', 'soy sauce', 'sojasoße', 'sojasauce', 'salsa de soja', 'sauce soja', 'salsa di soia', 'molho de soja',
@@ -28,7 +33,7 @@ const KEYWORDS: [CategoryId, string[]][] = [
     'luk=', 'luka=', 'shallot', 'schalotte', 'chalota', 'échalote', 'scalogn', 'česen', 'česna', 'češnjak', 'garlic',
     'knoblauch', 'ajo=', 'ajos=', 'ail=', 'aglio', 'alho', 'krompir', 'krumpir', 'potato', 'kartoffel', 'patata',
     'pomme de terre', 'pommes de terre', 'batata', 'korenj', 'mrkv', 'carrot', 'karotte', 'möhre', 'zanahori',
-    'carotte', 'carot', 'cenour', 'paprik', 'bell pepper', 'pimiento', 'poivron', 'peperon', 'pimentão',
+    'carotte', 'carot', 'cenour', 'paprik', 'bell pepper', 'pimiento', 'poivron', 'peperon', 'pimentão', 'pimento=', 'pimentos=',
     'kumar', 'krastav', 'cucumber', 'gurke', 'pepino', 'concombre', 'cetriol', 'solat', 'salat', 'lettuce', 'lechuga',
     'laitue', 'lattuga', 'alface', 'špinač', 'spinach', 'spinat', 'espinaca', 'épinard', 'spinaci', 'espinafre',
     'bučk', 'tikvic', 'zucchin', 'calabacín', 'courgette', 'curgete', 'buč', 'pumpkin', 'kürbis', 'calabaza',
@@ -46,7 +51,7 @@ const KEYWORDS: [CategoryId, string[]][] = [
     'uva=', 'uvas=', 'raisin blanc', 'hrušk', 'krušk', 'pear', 'birne', 'pera=', 'peras=', 'poire', 'breskev',
     'breskv', 'peach', 'pfirsich', 'melocotón', 'pêche', 'pesca', 'pêssego', 'mang', 'ananas', 'pineapple', 'piña',
     'abacaxi', 'peteršilj', 'peršin', 'parsley', 'petersilie', 'perejil', 'persil', 'prezzemolo',
-    'koriander', 'cilantro', 'coriandr', 'coentro', 'meta=', 'metvic', 'mint', 'minze', 'menta', 'menthe', 'hortelã',
+    'koriander', 'korijand', 'cilantro', 'coriandr', 'coriandol', 'coentro', 'meta=', 'metvic', 'mint', 'minze', 'menta', 'menthe', 'hortelã',
     'bazilik', 'bosiljak', 'basil', 'basilikum', 'albahaca', 'basilic', 'basilico', 'manjericão', 'drobnjak',
     'vlasac', 'chive', 'schnittlauch', 'cebollino', 'ciboulette', 'erba cipollina', 'cebolinho', 'ingver', 'đumbir',
     'ginger', 'ingwer', 'jengibre', 'gingembre', 'zenzero', 'gengibre', 'rukol', 'rikul', 'arugula', 'rucola',
@@ -58,7 +63,7 @@ const KEYWORDS: [CategoryId, string[]][] = [
     'kale', 'ohrovt', 'kelj', 'grünkohl', 'mladi luk', 'spring onion', 'scallion', 'frühlingszwiebel', 'cebolleta',
   ]],
   ['meat', [
-    'piščan', 'piščanč', 'pilet', 'piletin', 'chicken', 'hähnchen', 'huhn', 'hühn', 'pollo', 'poulet', 'frango',
+    'piščan', 'piščanč', 'pilet', 'piletin', 'pileć', 'chicken', 'hähnchen', 'huhn', 'hühn', 'pollo', 'poulet', 'frango',
     'puran', 'purica', 'turkey', 'pute', 'truthahn', 'pavo', 'dinde', 'tacchino', 'peru=', 'govej', 'govedin',
     'junetin', 'beef', 'rind', 'ternera', 'vacuno', 'boeuf', 'bœuf', 'manzo', 'vaca=', 'svinj', 'pork', 'schwein',
     'cerdo', 'porc', 'maiale', 'porco', 'mlet', 'ground', 'hackfleisch', 'faschiert', 'carne picada', 'haché',
@@ -97,7 +102,7 @@ const KEYWORDS: [CategoryId, string[]][] = [
   ['pantry', [
     'mok', 'brašn', 'flour', 'mehl', 'harina', 'farine', 'farina', 'farinha', 'sladkor', 'šećer', 'sugar', 'zucker',
     'azúcar', 'sucre', 'zucchero', 'açúcar', 'riž', 'rice', 'reis', 'arroz', 'riz=', 'riso=', 'testenin', 'tjestenin',
-    'pasta', 'nudel', 'pâtes', 'massa=', 'špaget', 'spaghetti', 'espagueti', 'njok', 'gnocchi', 'olje', 'ulje', 'oil',
+    'pasta', 'nudel', 'pâtes', 'massa=', 'špaget', 'spaghetti', 'espagueti', 'njok', 'gnocchi', 'olj', 'ulj', 'oil',
     'öl=', 'olivenöl', 'aceite', 'huile', 'olio', 'azeite', 'óleo', 'olivno', 'kvas', 'yeast', 'hefe', 'levadura',
     'levure', 'lievito', 'fermento', 'pecilni', 'prašak za pecivo', 'baking', 'backpulver', 'natron', 'polvo de hornear',
     'bicarbonat', 'soda bikarbon', 'med=', 'medu=', 'honey', 'honig', 'miel', 'miele', 'mel=', 'čokolad', 'chocolat',

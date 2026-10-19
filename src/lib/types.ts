@@ -17,6 +17,8 @@ export interface Recipe {
   tags: string[];
   notes?: string;
   favorite: boolean;
+  /** Set on built-in sample recipes; unedited samples follow the UI language. */
+  sampleId?: string;
   createdAt: number;
   updatedAt: number;
 }
