@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
 import { cloudConfigured, useAccount } from '../lib/cloud';
-import { isNative } from '../lib/platform';
+import { API_BASE } from '../lib/api';
 
 // The privacy policy is served by the same server the apps use for translations.
-const PRIVACY_URL = `${isNative ? import.meta.env.VITE_API_URL ?? '' : ''}/privacy.html`;
+const PRIVACY_URL = `${API_BASE ?? ''}/privacy.html`;
 import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 
 export function Settings() {

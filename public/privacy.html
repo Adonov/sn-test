@@ -72,14 +72,14 @@
 
         <h2>Data stored on your device</h2>
         <p>
-          Your recipes, photos you add, meal plan, grocery list and settings are stored on your device. You can export
+          Your recipes, photos you add, meal plan, grocery list, food diary and nutrition goals are stored on your device. You can export
           or delete them at any time under <em>More</em>.
         </p>
 
         <h2>Account (optional)</h2>
         <p>
           If you create an account, we store your email address, a securely hashed password, and a copy of your recipes,
-          meal plan and grocery list so they can be synced between your devices. This data is stored with our database
+          meal plan, grocery list and food diary so they can be synced between your devices. This data is stored with our database
           provider Supabase in the European Union (Ireland). You can delete your account and all of its cloud data at
           any time in the app under <em>More → Account → Delete account</em>.
         </p>
@@ -90,6 +90,14 @@
           this, the recipe text (title, ingredients, steps, notes and tags) is sent through our server to Anthropic, an
           AI provider, which returns the translation. No account details are included. Anthropic processes this data on
           our behalf and does not use it to train its models.
+        </p>
+
+        <h2>Food diary and nutrition estimates</h2>
+        <p>
+          When you scan a barcode or search for a food, the barcode or search words are sent to Open Food Facts, an open
+          food database, to look up the product. When you ask for an AI estimate – from a photo of your meal, a description
+          or a recipe – the photo or text is sent through our server to Anthropic, which returns the estimated foods and
+          nutrients. Photos are not stored on our server. Nutrition estimates are approximate and are not medical advice.
         </p>
 
         <h2>Importing recipes</h2>
@@ -132,14 +140,15 @@
 
         <h2>Podatki na tvoji napravi</h2>
         <p>
-          Recepti, dodane fotografije, načrt obrokov, nakupovalni seznam in nastavitve so shranjeni na tvoji napravi.
+          Recepti, dodane fotografije, načrt obrokov, nakupovalni seznam, prehranski dnevnik in prehranski cilji so shranjeni
+          na tvoji napravi.
           Kadarkoli jih lahko izvoziš ali izbrišeš v razdelku <em>Več</em>.
         </p>
 
         <h2>Račun (neobvezno)</h2>
         <p>
-          Če ustvariš račun, hranimo tvoj e-naslov, varno zgoščeno geslo ter kopijo receptov, načrta obrokov in
-          nakupovalnega seznama, da se lahko sinhronizirajo med tvojimi napravami. Ti podatki so shranjeni pri ponudniku
+          Če ustvariš račun, hranimo tvoj e-naslov, varno zgoščeno geslo ter kopijo receptov, načrta obrokov,
+          nakupovalnega seznama in prehranskega dnevnika, da se lahko sinhronizirajo med tvojimi napravami. Ti podatki so shranjeni pri ponudniku
           baze Supabase v Evropski uniji (Irska). Račun in vse njegove podatke v oblaku lahko kadarkoli izbrišeš v
           aplikaciji pod <em>Več → Račun → Izbriši račun</em>.
         </p>
@@ -150,6 +159,14 @@
           sestavine, koraki, opombe in oznake) prek našega strežnika pošlje ponudniku umetne inteligence Anthropic, ki
           vrne prevod. Podatki o računu niso vključeni. Anthropic te podatke obdeluje v našem imenu in jih ne uporablja za
           učenje svojih modelov.
+        </p>
+
+        <h2>Prehranski dnevnik in ocene hranil</h2>
+        <p>
+          Ko skeniraš črtno kodo ali iščeš živilo, se črtna koda oziroma iskalni niz pošlje v odprto bazo Open Food Facts,
+          da poiščemo izdelek. Ko zahtevaš oceno z AI – iz fotografije obroka, opisa ali recepta – se fotografija ali
+          besedilo prek našega strežnika pošlje ponudniku Anthropic, ki vrne ocenjena živila in hranila. Fotografij na
+          strežniku ne hranimo. Ocene hranil so približne in niso zdravniški nasvet.
         </p>
 
         <h2>Uvoz receptov</h2>

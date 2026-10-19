@@ -1089,3 +1089,151 @@ div.hero-image.placeholder {
   flex-wrap: wrap;
   gap: 0.4rem;
 }
+
+/* ---- Nutrition ---- */
+
+.meter {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+
+.meter div {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.meter.over div {
+  background: var(--blue-strong);
+}
+
+.summary .kcal-value {
+  font-size: 2.2rem;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.macro-value {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-label {
+  min-width: 140px;
+  text-align: center;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.food-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.food-list li + li {
+  border-top: 1px dashed var(--border);
+}
+
+.food-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.55rem 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.meal .section-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nutrient-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nutrient-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.75rem;
+  padding: 0.4rem 0;
+}
+
+.nutrient-list .meter {
+  grid-column: 1 / -1;
+}
+
+details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+h2.inline {
+  display: inline;
+}
+
+.add-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+
+.method span {
+  color: var(--text);
+}
+
+.method:disabled,
+.method.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.push {
+  margin-left: auto;
+}

@@ -3,6 +3,7 @@ import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import Anthropic from '@anthropic-ai/sdk';
 import { extractRecipeFromHtml } from '../shared/recipeParsing.js';
+import { estimateFoods, estimateRecipe, NutritionError } from './nutrition.js';
 import { readRecipe, TranslateError, translateRecipe } from './translate.js';
 
 const MAX_BYTES = 3_000_000;
@@ -79,11 +80,11 @@ async function fetchPage(rawUrl) {
   throw new UserError('too_many_redirects');
 }
 
-// Translation costs money per call, so each client address gets a modest budget, and the
+// AI requests (translations, nutrition estimates) cost money per call, so each client address gets a modest budget, and the
 // whole server a daily cap (MAX_TRANSLATIONS_PER_DAY) so a flood of requests can't run up the bill.
 const RATE_WINDOW_MS = 10 * 60_000;
 const RATE_LIMIT = 60;
-const DAILY_LIMIT = Number(process.env.MAX_TRANSLATIONS_PER_DAY) || 300;
+const DAILY_LIMIT = Number(process.env.MAX_AI_REQUESTS_PER_DAY ?? process.env.MAX_TRANSLATIONS_PER_DAY) || 300;
 const hits = new Map();
 let today = '';
 let translatedToday = 0;
@@ -113,12 +114,12 @@ function rateLimited(req) {
   return false;
 }
 
-function readJson(req) {
+function readJson(req, maxBytes = 50_000) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 50_000) reject(new UserError('failed'));
+      if (body.length > maxBytes) reject(new UserError('failed'));
     });
     req.on('end', () => {
       try {
@@ -153,6 +154,17 @@ export async function handleApi(req, res) {
       const { recipe, targetLanguage } = await readJson(req);
       return send(res, 200, { recipe: await translateRecipe(readRecipe(recipe), targetLanguage) });
     }
+    if (path === '/api/nutrition/estimate' && req.method === 'POST') {
+      if (rateLimited(req)) return send(res, 429, { error: 'rate_limited' });
+      // Meal photos arrive as data URLs (downscaled by the app), hence the larger limit.
+      const { image, text, lang } = await readJson(req, 5_000_000);
+      return send(res, 200, { items: await estimateFoods({ image, text, lang }) });
+    }
+    if (path === '/api/nutrition/recipe' && req.method === 'POST') {
+      if (rateLimited(req)) return send(res, 429, { error: 'rate_limited' });
+      const { recipe } = await readJson(req);
+      return send(res, 200, { perServing: await estimateRecipe(recipe) });
+    }
     if (path === '/api/import' && req.method === 'POST') {
       const { url } = await readJson(req);
       if (typeof url !== 'string' || !url.trim()) throw new UserError('invalid_url');
@@ -163,7 +175,9 @@ export async function handleApi(req, res) {
     send(res, 404, { error: 'not_found' });
   } catch (err) {
     if (err instanceof UserError) return send(res, 400, { error: err.message, ...err.params });
-    if (err instanceof TranslateError) return send(res, err.message === 'not_configured' ? 503 : 422, { error: err.message });
+    if (err instanceof TranslateError || err instanceof NutritionError) {
+      return send(res, err.message === 'not_configured' ? 503 : 422, { error: err.message });
+    }
     if (err instanceof Anthropic.AuthenticationError) return send(res, 503, { error: 'not_configured' });
     if (err instanceof Anthropic.RateLimitError) return send(res, 429, { error: 'rate_limited' });
     if (err?.code === 'ENOTFOUND') return send(res, 400, { error: 'not_found' });

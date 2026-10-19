@@ -1,4 +1,5 @@
 import type { Language } from '../i18n/languages';
+import type { FoodLogEntry, Nutrients, NutritionGoals } from './nutrition';
 
 /** The translatable text of a recipe. */
 export interface RecipeText {
@@ -31,6 +32,8 @@ export interface Recipe {
   sampleId?: string;
   /** Language the recipe was written in; detected from its text when missing. */
   lang?: Language;
+  /** Estimated nutrients for one serving, cleared whenever the recipe is edited. */
+  nutrition?: Nutrients;
   /** Machine translations of the text, cleared whenever the recipe is edited. */
   translations?: Partial<Record<Language, RecipeText>>;
   createdAt: number;
@@ -73,4 +76,7 @@ export interface AppState {
   recipes: Recipe[];
   plan: PlanEntry[];
   grocery: GroceryItem[];
+  /** Food diary (nutrition tracking). */
+  diary?: FoodLogEntry[];
+  nutritionGoals?: NutritionGoals;
 }

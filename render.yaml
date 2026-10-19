@@ -16,7 +16,7 @@ services:
         value: "22"
       - key: TRUST_PROXY
         value: "1"
-      - key: MAX_TRANSLATIONS_PER_DAY
+      - key: MAX_AI_REQUESTS_PER_DAY # translations + nutrition estimates
         value: "300"
       - key: ANTHROPIC_API_KEY
         sync: false

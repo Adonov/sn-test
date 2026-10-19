@@ -95,7 +95,8 @@ Pred vsako novo oddajo povečaj številko različice:
 | --- | --- | --- | --- | --- |
 | Contact Info → Email Address | Da (samo z računom) | Da | Ne | App Functionality |
 | User Content → Other User Content (recepti) | Da | Da | Ne | App Functionality |
-| User Content → Photos | Da (če doda fotografijo receptu in ima račun) | Da | Ne | App Functionality |
+| User Content → Photos | Da (fotografije receptov z računom; fotografije obrokov za oceno AI) | Da | Ne | App Functionality |
+| Health & Fitness → Health (prehranski dnevnik) | Da (samo z računom) | Da | Ne | App Functionality |
 | Vse ostalo (lokacija, analitika, oglasi …) | Ne | | | |
 
 Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
@@ -121,8 +122,8 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
 
 ### Obrazci v Play Console
 - **Privacy policy**: `https://forkful.onrender.com/privacy.html`
-- **Data safety**: zbira *Email address* (Account management, neobvezno) in *Other user-generated content*
-  (App functionality); podatki so šifrirani med prenosom; uporabnik lahko zahteva izbris (v aplikaciji).
+- **Data safety**: zbira *Email address* (Account management, neobvezno), *Other user-generated content*
+  (App functionality), *Photos* (ocena obroka z AI, se ne hrani) in *Health info* (prehranski dnevnik, samo z računom); podatki so šifrirani med prenosom; uporabnik lahko zahteva izbris (v aplikaciji).
   Ne deli podatkov s tretjimi za oglaševanje.
 - **Content rating**: vprašalnik → kategorija *Reference/Utility*, vse »No« → Everyone.
 - **Target audience**: 13+ (ni namenjena otrokom).
@@ -136,7 +137,7 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
 
 ### English
 - **Name**: Forkful
-- **Subtitle** (iOS, max 30): Recipes, meal plan & groceries
+- **Subtitle** (iOS, max 30): Recipes, meals & nutrition
 - **Short description** (Android, max 80): Save recipes from any website or social post, plan meals, shop smarter.
 - **Keywords** (iOS, max 100): recipe,recipes,meal planner,grocery list,cooking,recipe keeper,shopping list,food,cookbook
 - **Description**:
@@ -149,6 +150,8 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > • Cook step by step with large text, built-in timers and a screen that stays on.
   > • Plan your week and turn it into one grocery list, merged and sorted by aisle.
   > • Watch the recipe video right inside the recipe.
+  > • Track calories, protein, carbs, fat, vitamins and minerals: scan a barcode, snap a photo of your meal or just
+  >   describe it, and log a serving of any recipe with one tap.
   > • Use the app in English, German, Spanish, French, Italian, Portuguese, Slovenian or Croatian – recipes are
   >   translated automatically.
   > • Optional account to sync between your phone, tablet and computer.
@@ -156,7 +159,7 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > No ads. No tracking. Your recipes stay yours.
 
 ### Slovenščina
-- **Podnaslov**: Recepti, načrt obrokov, nakupi
+- **Podnaslov**: Recepti, obroki in prehrana
 - **Kratek opis**: Shrani recepte s spleta in družbenih omrežij, načrtuj obroke in nakupuj pametneje.
 - **Ključne besede**: recepti,recept,načrt obrokov,nakupovalni seznam,kuhanje,kuharska knjiga,hrana,nakupi
 - **Opis**:
@@ -169,6 +172,8 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
   > • Kuhaj korak za korakom z velikimi črkami, časovniki in zaslonom, ki ostane prižgan.
   > • Načrtuj teden in ga spremeni v en nakupovalni seznam, združen in razvrščen po oddelkih.
   > • Video recepta si oglej kar v receptu.
+  > • Spremljaj kalorije, beljakovine, ogljikove hidrate, maščobe, vitamine in minerale: skeniraj črtno kodo,
+  >   fotografiraj obrok ali ga samo opiši, porcijo recepta pa vpišeš z enim dotikom.
   > • Aplikacijo uporabljaj v slovenščini, hrvaščini, angleščini, nemščini, italijanščini, španščini, francoščini ali
   >   portugalščini – recepti se prevedejo samodejno.
   > • Neobvezen račun za sinhronizacijo med telefonom, tablico in računalnikom.

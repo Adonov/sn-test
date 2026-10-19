@@ -30,6 +30,9 @@ načrtuj obroke za cel teden in iz načrta samodejno sestavi nakupovalni seznam.
 - **Računi in sinhronizacija** (neobvezno) – prijava z e-pošto in geslom prek [Supabase](https://supabase.com);
   recepti, načrt in nakupovalni seznam se sinhronizirajo med napravami. Ob prvi prijavi se podatki z naprave
   združijo s podatki računa. Račun lahko izbrišeš v aplikaciji (zahteva App Store).
+- **Prehranski dnevnik** – kalorije, makro- in mikrohranila po obrokih ter dnevni cilji. Vnos s skeniranjem črtne
+  kode ([Open Food Facts](https://openfoodfacts.org)), fotografijo obroka ali opisom (oceni Claude), iskanjem po bazi,
+  ročno ali kot porcijo recepta (AI izračuna hranilno vrednost na porcijo).
 - **Videi v receptu** – YouTube, TikTok, Instagram Reels, Vimeo ali neposredna povezava do videa se predvajajo
   znotraj recepta. Pri uvozu se video doda samodejno, če ga stran ali objava vsebuje.
 

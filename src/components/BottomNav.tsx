@@ -5,6 +5,7 @@ import { useAppState } from '../lib/store';
 const ITEMS: { id: string; href: string; label: MessageKey; icon: IconName }[] = [
   { id: 'library', href: '#/', label: 'nav.recipes', icon: 'book' },
   { id: 'planner', href: '#/planner', label: 'nav.plan', icon: 'calendar' },
+  { id: 'nutrition', href: '#/nutrition', label: 'nav.nutrition', icon: 'nutrition' },
   { id: 'grocery', href: '#/grocery', label: 'nav.grocery', icon: 'cart' },
   { id: 'settings', href: '#/settings', label: 'nav.more', icon: 'more' },
 ];

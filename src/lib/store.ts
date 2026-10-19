@@ -5,6 +5,7 @@ import { addToGroceryList, categorize, newId, toCategoryId } from './grocery';
 import { loadSaved, save } from './persistence';
 import { SAMPLES } from './samples';
 import { localize } from './localize';
+import type { FoodLogEntry, Nutrients, NutritionGoals } from './nutrition';
 import type { AppState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
 
 function initialState(language?: Language): AppState {
@@ -130,8 +131,9 @@ export function saveRecipe(input: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt' 
       ...input,
       id,
       favorite: existing?.favorite ?? false,
-      // Saved text is the new original; old translations no longer match it.
+      // Saved text is the new original; old translations and estimates no longer match it.
       translations: undefined,
+      nutrition: undefined,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -186,6 +188,36 @@ export function getPendingShare(): string | undefined {
 
 export function clearPendingShare(): void {
   pendingShare = undefined;
+}
+
+/** Stores an estimated nutrition per serving, unless the recipe was edited meanwhile. */
+export function setRecipeNutrition(id: string, nutrition: Nutrients, basedOn: number): void {
+  setState((s) => ({
+    ...s,
+    recipes: s.recipes.map((r) => (r.id === id && r.updatedAt === basedOn ? { ...r, nutrition } : r)),
+  }));
+}
+
+// ---- Food diary ----
+
+export function addDiaryEntries(entries: Omit<FoodLogEntry, 'id' | 'createdAt'>[]): void {
+  const now = Date.now();
+  setState((s) => ({
+    ...s,
+    diary: [...(s.diary ?? []), ...entries.map((e, i) => ({ ...e, id: newId(), createdAt: now + i }))],
+  }));
+}
+
+export function updateDiaryEntry(id: string, patch: Partial<Pick<FoodLogEntry, 'amount' | 'slot' | 'name'>>): void {
+  setState((s) => ({ ...s, diary: (s.diary ?? []).map((e) => (e.id === id ? { ...e, ...patch } : e)) }));
+}
+
+export function removeDiaryEntry(id: string): void {
+  setState((s) => ({ ...s, diary: (s.diary ?? []).filter((e) => e.id !== id) }));
+}
+
+export function setNutritionGoals(goals: NutritionGoals): void {
+  setState((s) => ({ ...s, nutritionGoals: goals }));
 }
 
 // ---- Meal plan ----

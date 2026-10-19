@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../components/Modal';
 import { Icon } from '../components/Icon';
 import { RecipeImage } from '../components/RecipeImage';
+import { RecipeNutrition } from '../components/RecipeNutrition';
 import { RecipeVideo } from '../components/RecipeVideo';
 import { useI18n } from '../i18n';
 import { useTranslationStatus } from '../lib/translation';
@@ -162,6 +163,8 @@ export function RecipeDetail({ recipe }: { recipe: Recipe }) {
           )}
         </ol>
       </section>
+
+      <RecipeNutrition recipe={recipe} onLogged={flash} />
 
       {recipe.notes && (
         <section className="card">

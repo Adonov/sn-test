@@ -14,10 +14,12 @@ import { Planner } from './pages/Planner';
 import { Grocery } from './pages/Grocery';
 import { Settings } from './pages/Settings';
 import { Account } from './pages/Account';
+import { AddFood } from './pages/AddFood';
+import { Nutrition } from './pages/Nutrition';
 import { NotFound } from './components/NotFound';
 
 export function App() {
-  const [page, id, sub] = useRoute();
+  const [page, id, sub, extra] = useRoute();
   const { recipes } = useAppState();
   const { lang } = useI18n();
   useEffect(() => {
@@ -57,6 +59,9 @@ export function App() {
       break;
     case 'account':
       content = <Account />;
+      break;
+    case 'nutrition':
+      content = id === 'add' ? <AddFood key={`${sub}-${extra}`} date={sub} slot={extra} /> : <Nutrition date={id} />;
       break;
     default:
       content = <NotFound />;

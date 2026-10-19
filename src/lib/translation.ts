@@ -1,12 +1,9 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import type { Language } from '../i18n/languages';
 import { needsTranslation, recipeText } from './localize';
-import { isNative } from './platform';
+import { API_BASE } from './api';
 import { getState, setRecipeTranslation } from './store';
 import type { Recipe, RecipeText } from './types';
-
-// The website calls its own server; the apps call the hosted server configured at build time.
-const API_BASE: string | undefined = isNative ? import.meta.env.VITE_API_URL : '';
 
 export type TranslationStatus = 'pending' | 'failed';
 

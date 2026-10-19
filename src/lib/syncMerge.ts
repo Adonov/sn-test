@@ -27,6 +27,8 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
     recipes: merged.sort((a, b) => b.createdAt - a.createdAt),
     plan: [...byId(remote.plan, local.plan).values()],
     grocery: [...byId(remote.grocery, local.grocery).values()],
+    diary: [...byId(remote.diary ?? [], local.diary ?? []).values()],
+    nutritionGoals: local.nutritionGoals ?? remote.nutritionGoals,
     modifiedAt: Date.now(),
   };
 }
