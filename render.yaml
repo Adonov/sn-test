@@ -20,6 +20,13 @@ services:
         value: "300"
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Strava connection (optional): from https://www.strava.com/settings/api
+      - key: STRAVA_CLIENT_ID
+        sync: false
+      - key: STRAVA_CLIENT_SECRET
+        sync: false
+      - key: STRAVA_CALLBACK_DOMAIN # the "Authorization Callback Domain" there, e.g. taisty.onrender.com
+        sync: false
       # The website version gets accounts too (same values as in your .env).
       - key: VITE_SUPABASE_URL
         sync: false

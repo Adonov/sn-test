@@ -1,14 +1,28 @@
 import { addDays, fromISODate, toISODate } from './dates';
+import type { AppState } from './types';
 
-export type WorkoutKind = 'run' | 'ride' | 'walk' | 'hike' | 'swim' | 'strength' | 'hiit' | 'yoga' | 'other';
+export type WorkoutKind =
+  | 'run'
+  | 'ride'
+  | 'walk'
+  | 'hike'
+  | 'swim'
+  | 'row'
+  | 'ski'
+  | 'strength'
+  | 'hiit'
+  | 'yoga'
+  | 'stretch'
+  | 'sport'
+  | 'other';
 
-export const WORKOUT_KINDS: WorkoutKind[] = ['run', 'ride', 'walk', 'hike', 'swim', 'strength', 'hiit', 'yoga', 'other'];
+export const WORKOUT_KINDS: WorkoutKind[] = ['run', 'ride', 'swim', 'walk', 'hike', 'strength', 'stretch', 'yoga', 'hiit', 'row', 'ski', 'sport', 'other'];
 
 /** Kinds measured by distance. */
-export const DISTANCE_KINDS: WorkoutKind[] = ['run', 'ride', 'walk', 'hike', 'swim'];
+export const DISTANCE_KINDS: WorkoutKind[] = ['run', 'ride', 'walk', 'hike', 'swim', 'row', 'ski'];
 
 /** Endurance kinds after which we ask about gels, drinks and food. */
-export const FUEL_KINDS: WorkoutKind[] = ['run', 'ride', 'hike', 'swim'];
+export const FUEL_KINDS: WorkoutKind[] = ['run', 'ride', 'hike', 'swim', 'row', 'ski'];
 
 export interface Workout {
   id: string;
@@ -18,7 +32,10 @@ export interface Workout {
   minutes: number;
   km?: number;
   kcal?: number;
-  source: 'health' | 'manual';
+  source: 'health' | 'manual' | 'strava';
+  /** Average heart rate, when the source has it. */
+  heartRate?: number;
+  elevationM?: number;
 }
 
 const HOUR = 3_600_000;
@@ -27,6 +44,13 @@ const DAY = 24 * HOUR;
 /** Apple Health / Health Connect workout types → our kinds. */
 export function kindFromHealth(type: string): WorkoutKind {
   const t = type.toLowerCase();
+  if (t.includes('stretch') || t === 'flexibility' || t === 'cooldown' || t === 'preparationandrecovery') return 'stretch';
+  if (t.includes('rowing') || t.includes('paddl') || t === 'kayaking') return 'row';
+  if (t.includes('ski') || t.includes('snowboard') || t === 'snowsports') return 'ski';
+  if (
+    ['soccer', 'basketball', 'tennis', 'volleyball', 'handball', 'badminton', 'squash', 'tabletennis', 'hockey', 'icehockey', 'rugby', 'americanfootball', 'pickleball', 'racquetball', 'cricket', 'baseball', 'softball', 'lacrosse', 'australianfootball'].includes(t)
+  )
+    return 'sport';
   if (t.includes('run') || t === 'trackandfield') return 'run';
   if (t.includes('cycl') || t.includes('biking') || t === 'handcycling') return 'ride';
   if (t.includes('walk')) return 'walk';
@@ -40,8 +64,39 @@ export function kindFromHealth(type: string): WorkoutKind {
   return 'other';
 }
 
+/** Strava sport types → our kinds. */
+export function kindFromStrava(type: string): WorkoutKind {
+  const t = type.toLowerCase();
+  if (t.includes('run')) return 'run';
+  if (t.includes('ride') || t === 'velomobile' || t === 'handcycle') return 'ride';
+  if (t === 'swim') return 'swim';
+  if (t === 'walk' || t === 'wheelchair') return 'walk';
+  if (t === 'hike' || t === 'rockclimbing' || t === 'snowshoe') return 'hike';
+  if (t.includes('row') || t === 'kayaking' || t === 'canoeing' || t === 'standuppaddling') return 'row';
+  if (t.includes('ski') || t === 'snowboard') return 'ski';
+  if (t === 'weighttraining' || t === 'crossfit') return 'strength';
+  if (t === 'highintensityintervaltraining') return 'hiit';
+  if (t === 'yoga' || t === 'pilates') return 'yoga';
+  if (['soccer', 'tennis', 'badminton', 'squash', 'tabletennis', 'pickleball', 'racquetball', 'basketball', 'volleyball'].includes(t)) return 'sport';
+  return 'other';
+}
+
 // Rough energy cost (MET) per kind, for workouts entered by hand.
-const MET: Record<WorkoutKind, number> = { run: 9.8, ride: 7.5, walk: 3.5, hike: 6, swim: 7, strength: 5, hiit: 8, yoga: 2.8, other: 5 };
+const MET: Record<WorkoutKind, number> = {
+  run: 9.8,
+  ride: 7.5,
+  walk: 3.5,
+  hike: 6,
+  swim: 7,
+  row: 7,
+  ski: 7,
+  strength: 5,
+  hiit: 8,
+  yoga: 2.8,
+  stretch: 2.3,
+  sport: 7,
+  other: 5,
+};
 
 /** Estimated calories for a workout entered by hand. Running uses ~1 kcal per kg and km when the distance is known. */
 export function estimateKcal(kind: WorkoutKind, minutes: number, weightKg = 70, km?: number): number {
@@ -51,7 +106,21 @@ export function estimateKcal(kind: WorkoutKind, minutes: number, weightKg = 70, 
 
 // ---- Training load ----
 
-const INTENSITY: Record<WorkoutKind, number> = { run: 1.3, ride: 1, walk: 0.4, hike: 0.8, swim: 1.1, strength: 0.9, hiit: 1.5, yoga: 0.3, other: 0.8 };
+const INTENSITY: Record<WorkoutKind, number> = {
+  run: 1.3,
+  ride: 1,
+  walk: 0.4,
+  hike: 0.8,
+  swim: 1.1,
+  row: 1.1,
+  ski: 1,
+  strength: 0.9,
+  hiit: 1.5,
+  yoga: 0.3,
+  stretch: 0.2,
+  sport: 1.2,
+  other: 0.8,
+};
 
 export function load(w: Workout): number {
   return w.minutes * INTENSITY[w.kind];
@@ -87,9 +156,19 @@ export function recoveryHours(w: Workout): number {
 }
 
 /** Kinds that load the legs with impact; an easy ride or a walk is the classic way to recover from them. */
-const IMPACT: WorkoutKind[] = ['run', 'hiit'];
+const IMPACT: WorkoutKind[] = ['run', 'hiit', 'sport'];
 
-export type AdviceKind = 'tooSoon' | 'recover' | 'restDay' | 'rampUp' | 'restart' | 'strength' | 'endurance' | 'keepGoing' | 'start';
+export type AdviceKind =
+  | 'tooSoon'
+  | 'recover'
+  | 'restDay'
+  | 'rampUp'
+  | 'restart'
+  | 'mobility'
+  | 'strength'
+  | 'endurance'
+  | 'keepGoing'
+  | 'start';
 
 export interface Advice {
   kind: AdviceKind;
@@ -152,7 +231,12 @@ export function trainingAdvice(workouts: Workout[], now: number, goal?: 'lose' |
   if (sinceLast >= 4) return { kind: 'restart', count: sinceLast };
   if (doneToday) return { kind: 'keepGoing' };
 
-  const hadStrength = recent.some((w) => w.kind === 'strength' && now - w.start < 7 * DAY);
+  // Lots of running/riding and no stretching or yoga for a week.
+  const week7 = recent.filter((w) => now - w.start < 7 * DAY);
+  const endurance = week7.filter((w) => ['run', 'ride', 'hike', 'row', 'ski', 'sport'].includes(w.kind)).length;
+  if (endurance >= 3 && !week7.some((w) => w.kind === 'stretch' || w.kind === 'yoga')) return { kind: 'mobility', count: endurance };
+
+  const hadStrength = week7.some((w) => w.kind === 'strength');
   if (!hadStrength || goal === 'gain') return { kind: 'strength' };
   return { kind: 'endurance' };
 }
@@ -193,4 +277,48 @@ export function fuelGuide(w: Workout, weightKg = 70) {
     during: during && { low: Math.round(during[0] * hours), high: Math.round(during[1] * hours), gels: Math.max(1, Math.round((during[0] * hours) / 25)) },
     after: { carbs: Math.round(weightKg * (hours >= 1.5 ? 1.2 : 1)), protein: 20 },
   };
+}
+
+// ---- Sport-specific stats ----
+
+/** "5:12 /km" for running and walking, "28.4 km/h" for riding, "2:05 /100 m" for swimming. */
+export function workoutPace(w: Workout, decimal = '.'): string | undefined {
+  if (!w.km || !w.minutes) return undefined;
+  const mmss = (minutes: number) => `${Math.floor(minutes)}:${String(Math.round((minutes % 1) * 60)).padStart(2, '0')}`.replace(/:60$/, ':00');
+  if (w.kind === 'swim') return `${mmss(w.minutes / (w.km * 10))} /100 m`;
+  if (w.kind === 'run' || w.kind === 'walk' || w.kind === 'hike') return `${mmss(w.minutes / w.km)} /km`;
+  if (w.kind === 'ride' || w.kind === 'ski' || w.kind === 'row') return `${String(Math.round((w.km / w.minutes) * 600) / 10).replace('.', decimal)} km/h`;
+  return undefined;
+}
+
+// ---- Several sources ----
+
+const RICHNESS: Record<Workout['source'], number> = { strava: 3, health: 2, manual: 1 };
+
+/**
+ * The same workout often arrives twice (Strava and Apple Health, or logged by hand too). Workouts
+ * that start within 15 minutes of each other and overlap mostly in time count once, keeping the
+ * most detailed copy.
+ */
+export function dedupeWorkouts(list: Workout[]): Workout[] {
+  const sorted = [...list].sort((a, b) => RICHNESS[b.source] - RICHNESS[a.source]);
+  const kept: Workout[] = [];
+  for (const w of sorted) {
+    const twin = kept.find((k) => {
+      if (Math.abs(k.start - w.start) > 15 * 60_000) return false;
+      const overlap = Math.min(k.start + k.minutes * 60_000, w.start + w.minutes * 60_000) - Math.max(k.start, w.start);
+      return overlap >= 0.6 * Math.min(k.minutes, w.minutes) * 60_000;
+    });
+    if (!twin) kept.push(w);
+  }
+  return kept.sort((a, b) => a.start - b.start);
+}
+
+/** Workouts from every source (by hand, Apple Health / Health Connect, Strava), each counted once, oldest first. */
+export function allWorkouts(s: AppState): Workout[] {
+  return dedupeWorkouts([
+    ...(s.workouts ?? []),
+    ...(s.device?.health?.enabled ? s.device.healthWorkouts ?? [] : []),
+    ...(s.device?.strava ? s.device.stravaWorkouts ?? [] : []),
+  ]);
 }

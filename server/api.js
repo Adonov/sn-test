@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { extractRecipeFromHtml } from '../shared/recipeParsing.js';
 import { estimateFoods, estimateRecipe, NutritionError } from './nutrition.js';
 import { readRecipe, TranslateError, translateRecipe } from './translate.js';
+import { deauthorize, exchangeCode, listActivities, refreshTokens, StravaError, stravaConfig } from './strava.js';
 
 const MAX_BYTES = 3_000_000;
 const MAX_REDIRECTS = 5;
@@ -142,7 +143,7 @@ export async function handleApi(req, res) {
   const path = req.url.split('?')[0];
   // The iOS/Android apps call the API from capacitor://localhost or https://localhost.
   res.setHeader('access-control-allow-origin', '*');
-  res.setHeader('access-control-allow-headers', 'content-type');
+  res.setHeader('access-control-allow-headers', 'content-type, authorization');
   res.setHeader('access-control-allow-methods', 'POST, GET, OPTIONS');
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -171,10 +172,29 @@ export async function handleApi(req, res) {
       const { html, finalUrl } = await fetchPage(url.trim());
       return send(res, 200, extractRecipeFromHtml(html, finalUrl));
     }
+    if (path === '/api/strava/config' && req.method === 'GET') return send(res, 200, stravaConfig(req.headers.host));
+    if (path === '/api/strava/token' && req.method === 'POST') {
+      const { code } = await readJson(req);
+      return send(res, 200, await exchangeCode(code));
+    }
+    if (path === '/api/strava/refresh' && req.method === 'POST') {
+      const { refreshToken } = await readJson(req);
+      return send(res, 200, await refreshTokens(refreshToken));
+    }
+    if (path === '/api/strava/activities' && req.method === 'GET') {
+      const token = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
+      const after = new URL(req.url, 'http://x').searchParams.get('after');
+      return send(res, 200, { activities: await listActivities(token, after) });
+    }
+    if (path === '/api/strava/deauthorize' && req.method === 'POST') {
+      await deauthorize(String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, ''));
+      return send(res, 200, { ok: true });
+    }
     if (path === '/api/health') return send(res, 200, { ok: true });
     send(res, 404, { error: 'not_found' });
   } catch (err) {
     if (err instanceof UserError) return send(res, 400, { error: err.message, ...err.params });
+    if (err instanceof StravaError) return send(res, err.status, { error: err.message });
     if (err instanceof TranslateError || err instanceof NutritionError) {
       return send(res, err.message === 'not_configured' ? 503 : 422, { error: err.message });
     }

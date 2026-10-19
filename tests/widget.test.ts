@@ -30,7 +30,11 @@ describe('widgetSnapshot', () => {
         },
       ],
       fasting: { planHours: 16, start: Date.UTC(2026, 9, 18, 20), history: [] },
-      device: { health: { enabled: true, addExercise: true }, activity: { '2026-10-19': { steps: 5000, exerciseKcal: 320 } } },
+      device: {
+        health: { enabled: true, addExercise: true },
+        activity: { '2026-10-19': { steps: 5000, exerciseKcal: 320 } },
+        healthWorkouts: [{ id: 'h1', kind: 'run', start: new Date(2026, 9, 19, 7).getTime(), minutes: 30, km: 5, kcal: 320, source: 'health' }],
+      },
     };
     const snap = widgetSnapshot(s, new Date(2026, 9, 19, 9));
     expect(snap).toMatchObject({

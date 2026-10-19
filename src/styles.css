@@ -2170,3 +2170,41 @@ h2 {
 input.switch:checked {
   background: var(--accent);
 }
+
+/* ---- Connected apps ---- */
+
+/* Strava's brand orange, as their guidelines ask for the connect button. */
+.btn.strava {
+  background: #fc5200;
+  border-color: #fc5200;
+  color: #fff;
+}
+
+.btn.strava:hover:not(:disabled) {
+  border-color: #fc5200;
+  opacity: 0.9;
+}
+
+.powered-by {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fc5200;
+}
+
+.steps-list {
+  margin: 0.75rem 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+  margin-top: 1rem;
+}

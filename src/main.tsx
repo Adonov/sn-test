@@ -5,13 +5,22 @@ import { isNative } from './lib/platform';
 import { initStore } from './lib/store';
 import './styles.css';
 
-initStore().then(() =>
+// Back from authorizing Strava on the website: /strava-callback?code=…
+const stravaCallback = location.pathname === '/strava-callback' ? new URLSearchParams(location.search) : undefined;
+if (stravaCallback) history.replaceState(null, '', '/#/connections');
+
+initStore().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
     </StrictMode>,
-  ),
-);
+  );
+  if (stravaCallback) {
+    import('./lib/strava')
+      .then((m) => m.finishStravaAuth(stravaCallback))
+      .catch((err) => console.warn('Strava sign-in failed', err));
+  }
+});
 
 import('./lib/cloud').then((m) => m.setupCloud());
 

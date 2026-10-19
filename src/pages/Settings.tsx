@@ -3,7 +3,6 @@ import { Icon } from '../components/Icon';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
 import { cloudConfigured, useAccount } from '../lib/cloud';
 import { API_BASE } from '../lib/api';
-import { isNative } from '../lib/platform';
 import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 import { healthName } from './Health';
 
@@ -71,15 +70,16 @@ export function Settings() {
             <span>{t('reminders.title')}</span>
             <Chevron />
           </a>
-          {isNative && (
-            <a href="#/health">
-              <span>
-                {healthName()}
-                {device?.health?.enabled && <small className="muted block">{t('health.on')}</small>}
-              </span>
-              <Chevron />
-            </a>
-          )}
+          <a href="#/connections">
+            <span>
+              {t('connections.title')}
+              <small className="muted block">
+                {[device?.strava && !device.strava.error && 'Strava', device?.health?.enabled && healthName()].filter(Boolean).join(' · ') ||
+                  t('connections.settingsHint')}
+              </small>
+            </span>
+            <Chevron />
+          </a>
         </nav>
       </section>
 

@@ -17,7 +17,7 @@ export function BottomNav({ active }: { active: string }) {
   const current =
     active === 'recipe' || active === 'new' || active === 'import'
       ? 'library'
-      : active === 'account' || active === 'reminders' || active === 'health'
+      : active === 'account' || active === 'reminders' || active === 'health' || active === 'connections'
         ? 'settings'
         : active === 'fasting' || active === 'training'
           ? 'nutrition'

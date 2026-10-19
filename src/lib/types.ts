@@ -3,6 +3,7 @@ import type { FastingState } from './fasting';
 import type { Profile } from './goals';
 import type { DayActivity, HealthSettings } from './health';
 import type { ReminderSettings } from './reminders';
+import type { StravaConnection } from './strava';
 import type { Workout } from './workouts';
 import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
 
@@ -106,6 +107,10 @@ export interface DeviceState {
   activity?: Record<string, DayActivity>;
   /** The last four weeks of workouts from Apple Health / Health Connect. */
   healthWorkouts?: Workout[];
+  /** Strava tokens (this device's own authorization). */
+  strava?: StravaConnection;
+  /** The last four weeks of Strava activities. */
+  stravaWorkouts?: Workout[];
   /** Workouts whose fuel question was answered or dismissed. */
   fuelChecked?: string[];
 }

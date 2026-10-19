@@ -31,6 +31,26 @@ na GitHub – Render se posodobi sam.
 
 ---
 
+## 1b. Povezava s Stravo (neobvezno)
+
+1. Prijavi se na [strava.com/settings/api](https://www.strava.com/settings/api) in ustvari aplikacijo:
+   - **Application Name**: tAIsty, **Category**: Training, **Website**: `https://taisty.onrender.com`
+   - **Authorization Callback Domain**: `taisty.onrender.com` (za preizkus v simulatorju na Macu: `localhost`)
+   - naloži ikono aplikacije.
+2. **Client ID** in **Client Secret** vpiši v Render (**Environment**): `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` in
+   `STRAVA_CALLBACK_DOMAIN=taisty.onrender.com`. Za simulator jih dodaj v `.env` (s `STRAVA_CALLBACK_DOMAIN=localhost`).
+   Skrivnost (Client Secret) ostane samo na strežniku – v aplikaciji je ni.
+3. ⚠️ **Omejitev športnikov:** nova Strava aplikacija sprva dovoli povezavo **samo tvojemu računu**. Pred objavo
+   v [Strava Developer Program](https://developers.strava.com/) zaprosi za večjo kapaciteto (pregled traja nekaj
+   tednov). Do takrat lahko Stravo preizkušaš samo ti; drugi uporabniki še vedno dobijo vadbe prek Apple Health /
+   Health Connect.
+4. **Smernice blagovne znamke:** pred oddajo gumb »Connect with Strava« in napis »Powered by Strava« zamenjaj z
+   uradnima slikama s [developers.strava.com/guidelines](https://developers.strava.com/guidelines/).
+5. **Pogoji Strave:** podatkov iz Strave ne smemo pošiljati v AI modele. Trener v tAIsty dela na napravi s pravili
+   (brez AI), zato je to v redu – tako naj tudi ostane.
+
+---
+
 ## 2. Supabase za produkcijo
 
 - **Authentication → Sign In / Providers → Email**: ponovno vklopi **Confirm email**.

@@ -10,6 +10,7 @@ import type { Profile } from './goals';
 import { mergeScaleWeights, type HealthData } from './health';
 import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
 import type { ReminderSettings } from './reminders';
+import type { StravaConnection } from './strava';
 import type { Workout } from './workouts';
 import type { AppState, DeviceState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
 
@@ -173,10 +174,19 @@ export function markFuelChecked(workoutId: string): void {
   setDevice((d) => ({ ...d, fuelChecked: [...(d.fuelChecked ?? []).filter((id) => id !== workoutId), workoutId].slice(-100) }));
 }
 
-/** Workouts entered by hand plus those from Apple Health / Health Connect, oldest first. */
-export function allWorkouts(s: AppState): Workout[] {
-  return [...(s.workouts ?? []), ...(s.device?.health?.enabled ? s.device.healthWorkouts ?? [] : [])].sort((a, b) => a.start - b.start);
+export function setStrava(connection: StravaConnection | undefined): void {
+  setDevice((d) =>
+    connection
+      ? { ...d, strava: { ...d.strava, ...connection, lastSync: connection.lastSync ?? d.strava?.lastSync } }
+      : { ...d, strava: undefined, stravaWorkouts: undefined },
+  );
 }
+
+export function setStravaWorkouts(workouts: Workout[]): void {
+  setDevice((d) => (d.strava ? { ...d, stravaWorkouts: workouts, strava: { ...d.strava, lastSync: Date.now(), error: undefined } } : d));
+}
+
+export { allWorkouts } from './workouts';
 
 // ---- Fasting ----
 

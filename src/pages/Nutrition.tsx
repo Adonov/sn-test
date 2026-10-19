@@ -22,6 +22,7 @@ import { addDiaryEntries, addWater, allWorkouts, removeDiaryEntry, toggleFavorit
 import { MEAL_SLOTS, type MealSlot, type Recipe } from '../lib/types';
 import { DEFAULT_FAST_HOURS, fastStatus, formatDuration } from '../lib/fasting';
 import { syncHealth } from '../lib/healthSync';
+import { syncStrava } from '../lib/strava';
 import { daySummary } from '../lib/today';
 import { needsFuelCheck } from '../lib/workouts';
 import { CoachCard, FuelCheck } from '../components/Coach';
@@ -77,6 +78,7 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
 
   useEffect(() => {
     syncHealth();
+    syncStrava();
   }, []);
 
   const workouts = useMemo(() => allWorkouts(appState).filter((w) => Date.now() - w.start < 28 * 86_400_000), [appState]);

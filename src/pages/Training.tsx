@@ -1,11 +1,13 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { BarChart } from '../components/Charts';
 import { CoachCard, FuelCheck, describeWorkout } from '../components/Coach';
 import { Icon } from '../components/Icon';
 import { useI18n } from '../i18n';
 import { addDays, fromISODate, toISODate } from '../lib/dates';
 import { addWorkout, allWorkouts, removeWorkout, useAppState } from '../lib/store';
-import { DISTANCE_KINDS, WORKOUT_KINDS, estimateKcal, needsFuelCheck, type WorkoutKind } from '../lib/workouts';
+import { DISTANCE_KINDS, WORKOUT_KINDS, estimateKcal, needsFuelCheck, workoutPace, type Workout, type WorkoutKind } from '../lib/workouts';
+import { syncHealth } from '../lib/healthSync';
+import { syncStrava } from '../lib/strava';
 import { healthName } from './Health';
 
 const DAY = 86_400_000;
@@ -16,6 +18,25 @@ export function Training() {
   const state = useAppState();
   const { t, lang, decimal } = useI18n();
   const workouts = allWorkouts(state);
+  const connected = Boolean(state.device?.strava && !state.device.strava.error) || Boolean(state.device?.health?.enabled);
+
+  useEffect(() => {
+    syncHealth();
+    syncStrava();
+  }, []);
+
+  const details = (w: Workout) =>
+    [
+      new Date(w.start).toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' }),
+      `${w.minutes} min`,
+      workoutPace(w, decimal),
+      w.heartRate && `♥ ${w.heartRate}`,
+      w.elevationM && `↑ ${w.elevationM} m`,
+      w.kcal && `${w.kcal} kcal`,
+      w.source === 'health' ? healthName() : w.source === 'strava' ? 'Strava' : undefined,
+    ]
+      .filter(Boolean)
+      .join(' · ');
   const checked = new Set(state.device?.fuelChecked ?? []);
   const now = Date.now();
   const toCheck = workouts.filter((w) => needsFuelCheck(w) && !checked.has(w.id) && now - w.start < 1.5 * DAY);
@@ -39,6 +60,17 @@ export function Training() {
       ))}
 
       <AddWorkout />
+      {!connected && (
+        <a className="card link-card" href="#/connections">
+          <span className="grow">
+            <b>{t('connections.cta')}</b>
+            <small className="muted block">{t('connections.ctaText')}</small>
+          </span>
+          <span className="flip muted" aria-hidden>
+            <Icon name="back" size={18} />
+          </span>
+        </a>
+      )}
 
       <section className="card">
         <h2>{t('training.week')}</h2>
@@ -61,11 +93,7 @@ export function Training() {
               <li key={w.id} className="workout-row">
                 <span className="grow">
                   {capitalize(describeWorkout(w, t, decimal))}
-                  <small className="muted block">
-                    {new Date(w.start).toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' })} · {w.minutes} min
-                    {w.kcal ? ` · ${w.kcal} kcal` : ''}
-                    {w.source === 'health' ? ` · ${healthName()}` : ''}
-                  </small>
+                  <small className="muted block">{details(w)}</small>
                 </span>
                 {w.source === 'manual' && (
                   <button className="icon-btn small" onClick={() => removeWorkout(w.id)} aria-label={t('common.remove')}>

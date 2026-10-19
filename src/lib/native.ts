@@ -5,6 +5,7 @@ import { syncHealth } from './healthSync';
 import { refreshReminders, setupReminders } from './notify';
 import { navigate } from './router';
 import { setPendingShare } from './store';
+import { finishStravaAuth, syncStrava } from './strava';
 import { setupWidgets } from './widget';
 
 /** Wires up app-only features: shared links, widgets, reminders, Apple Health / Health Connect. */
@@ -21,8 +22,16 @@ export function setupNative(): void {
     // Not available (e.g. iOS without the Share Extension); importing via paste still works.
   });
 
-  // taisty://nutrition, taisty://fasting… from the home screen widgets.
   App.addListener('appUrlOpen', ({ url }) => {
+    // taisty://<callback domain>/strava?code=… – back from authorizing Strava.
+    const strava = /^taisty:\/\/[^/]+\/strava\?(.*)$/.exec(url);
+    if (strava) {
+      import('@capacitor/browser').then(({ Browser }) => Browser.close().catch(() => {}));
+      navigate('/connections');
+      finishStravaAuth(new URLSearchParams(strava[1])).catch((err) => console.warn('Strava sign-in failed', err));
+      return;
+    }
+    // taisty://nutrition, taisty://fasting… from the home screen widgets.
     const match = /^taisty:\/\/([\w/-]*)/.exec(url);
     if (match) navigate(`/${match[1]}`);
   }).catch(() => {});
@@ -30,6 +39,7 @@ export function setupNative(): void {
   App.addListener('appStateChange', ({ isActive }) => {
     if (!isActive) return;
     syncHealth();
+    syncStrava();
     refreshReminders();
   }).catch(() => {});
 

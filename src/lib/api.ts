@@ -15,15 +15,19 @@ export class ApiError extends Error {
   }
 }
 
-export async function postJson<T>(path: string, body: unknown): Promise<T> {
+export function postJson<T>(path: string, body: unknown, headers: Record<string, string> = {}): Promise<T> {
+  return request<T>(path, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
+}
+
+export function getJson<T>(path: string, headers: Record<string, string> = {}): Promise<T> {
+  return request<T>(path, { headers });
+}
+
+async function request<T>(path: string, init: RequestInit): Promise<T> {
   if (API_BASE === undefined) throw new ApiError('not_configured', 0);
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    res = await fetch(`${API_BASE}${path}`, init);
   } catch {
     throw new ApiError('unreachable', 0);
   }
