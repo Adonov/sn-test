@@ -10,6 +10,7 @@ import type { Profile } from './goals';
 import { mergeScaleWeights, type HealthData } from './health';
 import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
 import type { ReminderSettings } from './reminders';
+import type { Workout } from './workouts';
 import type { AppState, DeviceState, GroceryItem, MealSlot, PlanEntry, Recipe, RecipeText } from './types';
 
 function initialState(language?: Language): AppState {
@@ -145,6 +146,7 @@ export function applyHealthData(data: HealthData): void {
   setDevice((d) => ({
     ...d,
     activity: { ...d.activity, ...data.activity },
+    healthWorkouts: data.workouts,
     health: { enabled: true, addExercise: true, ...d.health, lastSync: Date.now() },
   }));
   const weights = mergeScaleWeights(state.weights ?? [], data.weights, newId);
@@ -154,6 +156,26 @@ export function applyHealthData(data: HealthData): void {
       return { ...s, weights, profile: s.profile ? { ...s.profile, weightKg: latest.kg } : s.profile };
     });
   }
+}
+
+// ---- Workouts ----
+
+export function addWorkout(workout: Omit<Workout, 'id' | 'source'>): void {
+  setState((s) => ({ ...s, workouts: [...(s.workouts ?? []), { ...workout, id: newId(), source: 'manual' as const }].slice(-500) }));
+}
+
+export function removeWorkout(id: string): void {
+  setState((s) => ({ ...s, workouts: (s.workouts ?? []).filter((w) => w.id !== id) }));
+}
+
+/** Marks the fuel question for a workout as answered (or dismissed). */
+export function markFuelChecked(workoutId: string): void {
+  setDevice((d) => ({ ...d, fuelChecked: [...(d.fuelChecked ?? []).filter((id) => id !== workoutId), workoutId].slice(-100) }));
+}
+
+/** Workouts entered by hand plus those from Apple Health / Health Connect, oldest first. */
+export function allWorkouts(s: AppState): Workout[] {
+  return [...(s.workouts ?? []), ...(s.device?.health?.enabled ? s.device.healthWorkouts ?? [] : [])].sort((a, b) => a.start - b.start);
 }
 
 // ---- Fasting ----
@@ -278,12 +300,12 @@ export function setRecipeNutrition(id: string, nutrition: Nutrients, basedOn: nu
 
 // ---- Food diary ----
 
-export function addDiaryEntries(entries: Omit<FoodLogEntry, 'id' | 'createdAt'>[]): void {
+/** Adds entries to the diary and returns their ids. */
+export function addDiaryEntries(entries: Omit<FoodLogEntry, 'id' | 'createdAt'>[]): string[] {
   const now = Date.now();
-  setState((s) => ({
-    ...s,
-    diary: [...(s.diary ?? []), ...entries.map((e, i) => ({ ...e, id: newId(), createdAt: now + i }))],
-  }));
+  const added = entries.map((e, i) => ({ ...e, id: newId(), createdAt: now + i }));
+  setState((s) => ({ ...s, diary: [...(s.diary ?? []), ...added] }));
+  return added.map((e) => e.id);
 }
 
 export function updateDiaryEntry(id: string, patch: Partial<Pick<FoodLogEntry, 'amount' | 'slot' | 'name'>>): void {

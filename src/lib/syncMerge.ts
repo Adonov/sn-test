@@ -38,6 +38,7 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
     water: mergeMax(remote.water, local.water),
     favoriteFoods: [...byId(remote.favoriteFoods ?? [], local.favoriteFoods ?? []).values()],
     fasting: mergeFasting(local, remote),
+    workouts: [...byId(remote.workouts ?? [], local.workouts ?? []).values()].sort((a, b) => a.start - b.start),
     onboardedAt: local.onboardedAt ?? remote.onboardedAt,
     device: local.device,
     modifiedAt: Date.now(),

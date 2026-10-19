@@ -1,3 +1,4 @@
+import { toISODate } from './dates';
 import { waterGoal as defaultWaterGoal } from './goals';
 import { DEFAULT_GOALS, entryNutrients, sumNutrients } from './nutrition';
 import type { AppState } from './types';
@@ -9,8 +10,11 @@ export function daySummary(s: AppState, date: string) {
   const totals = sumNutrients(entries.map(entryNutrients));
   const health = s.device?.health;
   const activity = health?.enabled ? s.device?.activity?.[date] : undefined;
+  const manual = (s.workouts ?? []).filter((w) => toISODate(new Date(w.start)) === date);
+  const manualKcal = manual.reduce((sum, w) => sum + (w.kcal ?? 0), 0);
   // Calories burned in workouts are added to the goal, as in most trackers (can be turned off).
-  const burned = health?.addExercise ? activity?.exerciseKcal ?? 0 : 0;
+  const addExercise = health?.addExercise ?? true;
+  const burned = addExercise ? (activity?.exerciseKcal ?? 0) + manualKcal : 0;
   const eaten = totals.kcal ?? 0;
   return {
     goals,
@@ -18,6 +22,8 @@ export function daySummary(s: AppState, date: string) {
     totals,
     eaten,
     burned,
+    /** Whether there is any activity to show (health data or workouts entered by hand). */
+    active: Boolean(activity) || manual.length > 0,
     budget: goals.kcal + burned,
     left: goals.kcal + burned - eaten,
     activity,

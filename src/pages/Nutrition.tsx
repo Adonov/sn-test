@@ -18,11 +18,13 @@ import { waterGoal } from '../lib/goals';
 import { localize } from '../lib/localize';
 import { loggingStreak } from '../lib/nutritionStats';
 import { estimateRecipeNutrition } from '../lib/nutritionApi';
-import { addDiaryEntries, addWater, removeDiaryEntry, toggleFavoriteFood, updateDiaryEntry, useAppState } from '../lib/store';
+import { addDiaryEntries, addWater, allWorkouts, removeDiaryEntry, toggleFavoriteFood, updateDiaryEntry, useAppState } from '../lib/store';
 import { MEAL_SLOTS, type MealSlot, type Recipe } from '../lib/types';
 import { DEFAULT_FAST_HOURS, fastStatus, formatDuration } from '../lib/fasting';
 import { syncHealth } from '../lib/healthSync';
 import { daySummary } from '../lib/today';
+import { needsFuelCheck } from '../lib/workouts';
+import { CoachCard, FuelCheck } from '../components/Coach';
 import { useNow } from '../lib/useNow';
 
 const GLASS_ML = 250;
@@ -78,6 +80,11 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
     syncHealth();
   }, []);
 
+  const workouts = useMemo(() => allWorkouts(appState).filter((w) => Date.now() - w.start < 28 * 86_400_000), [appState]);
+  const fuelChecks = workouts.filter(
+    (w) => needsFuelCheck(w) && toISODate(new Date(w.start)) === date && !appState.device?.fuelChecked?.includes(w.id),
+  );
+
   const detailRows = NUTRIENTS.filter((n) => n.group !== 'macro' && totals[n.key] !== undefined);
 
   return (
@@ -132,7 +139,7 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
             <div className="ring-label">{day.left < 0 ? t('widget.over') : t('widget.left')}</div>
           </Ring>
           <div className="hero-stat">
-            {day.activity ? (
+            {day.active ? (
               <>
                 <b>{Math.round(day.burned)}</b>
                 <small className="muted">{t('nutrition.burned')}</small>
@@ -157,13 +164,17 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
           ))}
         </div>
         {day.activity && (
-          <a className="activity-line" href="#/health">
+          <a className="activity-line" href="#/training">
             <span>{t('health.stepsCount', { count: (day.activity.steps ?? 0).toLocaleString(lang) })}</span>
             {(day.activity.exerciseMinutes ?? 0) > 0 && <span>{t('health.exerciseLine', { minutes: day.activity.exerciseMinutes ?? 0, kcal: day.activity.exerciseKcal ?? 0 })}</span>}
           </a>
         )}
       </section>
 
+      {fuelChecks.map((w) => (
+        <FuelCheck key={w.id} workout={w} />
+      ))}
+      {date === today && workouts.length > 0 && <CoachCard workouts={workouts} compact />}
       {date === today && <FastingCard />}
 
       <section className="card water">

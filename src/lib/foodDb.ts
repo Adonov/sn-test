@@ -19,7 +19,7 @@ const FIELDS = 'code,product_name,brands,nutriments,serving_quantity,image_front
 
 async function getJson(url: string): Promise<unknown> {
   if (isNative) {
-    const res = await CapacitorHttp.get({ url, headers: { 'User-Agent': 'Forkful/1.0 (recipe app)' } });
+    const res = await CapacitorHttp.get({ url, headers: { 'User-Agent': 'tAIsty/1.0 (recipe app)' } });
     if (res.status >= 400) throw new Error(`HTTP ${res.status}`);
     return typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
   }

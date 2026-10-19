@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 // The app writes a JSON snapshot of today (see src/lib/widget.ts) into the shared App Group.
-private let appGroup = "group.com.forkful.app"
+private let appGroup = "group.com.taisty.app"
 
 struct Snapshot: Codable {
     var date: String
@@ -215,7 +215,7 @@ struct CaloriesView: View {
 struct CaloriesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "CaloriesWidget", provider: Provider()) { entry in
-            CaloriesView(entry: entry).widgetURL(URL(string: "forkful://nutrition"))
+            CaloriesView(entry: entry).widgetURL(URL(string: "taisty://nutrition"))
         }
         .configurationDisplayName("Calories")
         .description("Calories left today, macros and water.")
@@ -293,7 +293,7 @@ struct FastingView: View {
 struct FastingWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "FastingWidget", provider: Provider()) { entry in
-            FastingView(entry: entry).widgetURL(URL(string: "forkful://fasting"))
+            FastingView(entry: entry).widgetURL(URL(string: "taisty://fasting"))
         }
         .configurationDisplayName("Fasting")
         .description("Your fasting timer at a glance.")
@@ -302,7 +302,7 @@ struct FastingWidget: Widget {
 }
 
 @main
-struct ForkfulWidgets: WidgetBundle {
+struct TaistyWidgets: WidgetBundle {
     var body: some Widget {
         CaloriesWidget()
         FastingWidget()

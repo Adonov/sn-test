@@ -40,7 +40,7 @@ jobs:
         run: ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: forkful-android-debug
+          name: taisty-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
   ios:
@@ -62,5 +62,5 @@ jobs:
           -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
       - uses: actions/upload-artifact@v4
         with:
-          name: forkful-ios-simulator
+          name: taisty-ios-simulator
           path: build/Build/Products/Debug-iphonesimulator/App.app

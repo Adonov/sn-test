@@ -22,6 +22,7 @@ import { Fasting } from './pages/Fasting';
 import { Health } from './pages/Health';
 import { Reminders } from './pages/Reminders';
 import { Welcome } from './pages/Welcome';
+import { Training } from './pages/Training';
 import { NotFound } from './components/NotFound';
 
 export function App() {
@@ -70,6 +71,9 @@ export function App() {
       break;
     case 'fasting':
       content = <Fasting />;
+      break;
+    case 'training':
+      content = <Training />;
       break;
     case 'reminders':
       content = <Reminders />;

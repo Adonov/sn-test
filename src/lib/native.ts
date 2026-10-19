@@ -21,9 +21,9 @@ export function setupNative(): void {
     // Not available (e.g. iOS without the Share Extension); importing via paste still works.
   });
 
-  // forkful://nutrition, forkful://fasting… from the home screen widgets.
+  // taisty://nutrition, taisty://fasting… from the home screen widgets.
   App.addListener('appUrlOpen', ({ url }) => {
-    const match = /^forkful:\/\/([\w/-]*)/.exec(url);
+    const match = /^taisty:\/\/([\w/-]*)/.exec(url);
     if (match) navigate(`/${match[1]}`);
   }).catch(() => {});
 

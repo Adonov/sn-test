@@ -1,5 +1,5 @@
 // Minimal offline support: network-first for navigation, cache-first for static assets.
-const CACHE = 'forkful-v1';
+const CACHE = 'taisty-v1';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/', '/icon.svg', '/manifest.webmanifest'])));

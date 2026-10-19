@@ -2,7 +2,7 @@
 # Render → New → Blueprint → pick this repository. Secrets marked "sync: false" are asked for once.
 services:
   - type: web
-    name: forkful
+    name: taisty
     runtime: node
     plan: starter # always on; "free" works too but sleeps after 15 minutes without traffic
     region: frankfurt

@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Forkful</string>
-    <string name="title_activity_main">Forkful</string>
-    <string name="package_name">com.forkful.app</string>
-    <string name="custom_url_scheme">com.forkful.app</string>
-    <!-- Shown by Health Connect when the user asks how Forkful uses health data. -->
-    <string name="health_connect_privacy_policy_url">https://forkful.onrender.com/privacy.html</string>
+    <string name="app_name">tAIsty</string>
+    <string name="title_activity_main">tAIsty</string>
+    <string name="package_name">com.taisty.app</string>
+    <string name="custom_url_scheme">com.taisty.app</string>
+    <!-- Shown by Health Connect when the user asks how tAIsty uses health data. -->
+    <string name="health_connect_privacy_policy_url">https://taisty.onrender.com/privacy.html</string>
 </resources>

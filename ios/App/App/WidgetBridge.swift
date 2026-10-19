@@ -10,7 +10,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise)
     ]
 
-    static let appGroup = "group.com.forkful.app"
+    static let appGroup = "group.com.taisty.app"
 
     @objc func update(_ call: CAPPluginCall) {
         guard let snapshot = call.getString("snapshot") else {

@@ -6,7 +6,8 @@ import { fastStatus } from './fasting';
 import { isNative } from './platform';
 import { DEFAULT_REMINDERS, anyReminderOn, planReminders, reminderRoute, type PlannedReminder } from './reminders';
 import { navigate } from './router';
-import { getState, subscribe } from './store';
+import { allWorkouts, getState, subscribe } from './store';
+import { needsFuelCheck } from './workouts';
 import { daySummary } from './today';
 import type { AppState } from './types';
 
@@ -24,7 +25,7 @@ export async function requestNotifications(): Promise<boolean> {
 }
 
 function plan(s: AppState, now: Date): PlannedReminder[] {
-  const settings = s.device?.reminders ?? DEFAULT_REMINDERS;
+  const settings = { ...DEFAULT_REMINDERS, ...s.device?.reminders };
   if (!anyReminderOn(settings)) return [];
   const today = toISODate(now);
   const day = daySummary(s, today);
@@ -35,6 +36,9 @@ function plan(s: AppState, now: Date): PlannedReminder[] {
     waterGoal: day.waterGoal,
     weighedToday: (s.weights ?? []).some((w) => w.date === today),
     fastEndsAt: s.fasting?.start ? fastStatus(s.fasting.start, s.fasting.planHours, now.getTime()).endsAt : undefined,
+    fuelChecks: allWorkouts(s)
+      .filter((w) => needsFuelCheck(w) && !s.device?.fuelChecked?.includes(w.id))
+      .map((w) => ({ endedAt: w.start + w.minutes * 60_000, date: toISODate(new Date(w.start)) })),
   });
 }
 
@@ -51,6 +55,8 @@ function texts(s: AppState, r: PlannedReminder): { title: string; body: string }
       return { title: t('reminder.weighTitle'), body: t('reminder.weighBody') };
     case 'fastEnd':
       return { title: t('reminder.fastTitle'), body: t('reminder.fastBody', { hours: s.fasting?.planHours ?? 16 }) };
+    case 'fuel':
+      return { title: t('reminder.fuelTitle'), body: t('reminder.fuelBody') };
   }
 }
 

@@ -21,7 +21,7 @@ export function Settings() {
     const blob = new Blob([exportBackup()], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `forkful-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `taisty-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -57,6 +57,10 @@ export function Settings() {
         <nav className="link-list">
           <a href="#/nutrition/goals">
             <span>{t('goals.title')}</span>
+            <Chevron />
+          </a>
+          <a href="#/training">
+            <span>{t('training.title')}</span>
             <Chevron />
           </a>
           <a href="#/fasting">

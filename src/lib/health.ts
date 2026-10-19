@@ -1,6 +1,7 @@
 import { addDays, toISODate } from './dates';
 import type { WeightEntry } from './nutrition';
 import { isNative } from './platform';
+import { kindFromHealth, type Workout } from './workouts';
 
 /** Activity for one day from Apple Health / Health Connect. */
 export interface DayActivity {
@@ -29,6 +30,29 @@ export interface WorkoutSample {
   /** Seconds. */
   duration: number;
   totalEnergyBurned?: number;
+  workoutType?: string;
+  /** Meters. */
+  totalDistance?: number;
+  platformId?: string;
+}
+
+/** Health workouts as the app's workouts (used by the coach and the fuel check). */
+export function workoutsFromHealth(samples: WorkoutSample[]): Workout[] {
+  return samples
+    .filter((w) => w.duration >= 300)
+    .map((w) => {
+      const start = new Date(w.startDate).getTime();
+      return {
+        id: `h-${w.platformId ?? start}`,
+        kind: kindFromHealth(w.workoutType ?? 'other'),
+        start,
+        minutes: Math.round(w.duration / 60),
+        km: w.totalDistance ? Math.round(w.totalDistance / 100) / 10 : undefined,
+        kcal: w.totalEnergyBurned ? Math.round(w.totalEnergyBurned) : undefined,
+        source: 'health' as const,
+      };
+    })
+    .sort((a, b) => a.start - b.start);
 }
 
 export interface WeightSample {
@@ -102,11 +126,13 @@ export async function openHealthSettings(): Promise<void> {
 
 export interface HealthData {
   activity: Record<string, DayActivity>;
+  /** The last four weeks of workouts. */
+  workouts: Workout[];
   weights: WeightSample[];
 }
 
-/** Reads the last few days of activity and the last month of weight readings. */
-export async function readHealthData(days = 7): Promise<HealthData> {
+/** Reads the last weeks of activity and workouts and the last month of weight readings. */
+export async function readHealthData(days = 28): Promise<HealthData> {
   const health = await plugin();
   const now = new Date();
   const from = addDays(new Date(now.getFullYear(), now.getMonth(), now.getDate()), -(days - 1));
@@ -125,5 +151,5 @@ export async function readHealthData(days = 7): Promise<HealthData> {
       .then((r) => r.samples)
       .catch(() => []),
   ]);
-  return { activity: activityFromHealth(steps, workouts), weights };
+  return { activity: activityFromHealth(steps, workouts), workouts: workoutsFromHealth(workouts), weights };
 }

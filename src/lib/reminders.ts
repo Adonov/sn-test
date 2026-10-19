@@ -16,6 +16,8 @@ export interface ReminderSettings {
   weigh: TimeReminder & { weekly: boolean };
   /** Notify when a fast reaches its goal. */
   fastEnd: boolean;
+  /** After a run or ride, ask what was eaten and drunk. */
+  fuelCheck: boolean;
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
@@ -25,9 +27,10 @@ export const DEFAULT_REMINDERS: ReminderSettings = {
   water: { on: false, from: '09:00', to: '21:00', everyHours: 2 },
   weigh: { on: false, time: '07:30', weekly: true },
   fastEnd: true,
+  fuelCheck: true,
 };
 
-export type ReminderKind = 'breakfast' | 'lunch' | 'dinner' | 'water' | 'weigh' | 'fastEnd';
+export type ReminderKind = 'breakfast' | 'lunch' | 'dinner' | 'water' | 'weigh' | 'fastEnd' | 'fuel';
 
 export interface PlannedReminder {
   id: number;
@@ -44,6 +47,8 @@ export interface ReminderContext {
   weighedToday: boolean;
   /** When the running fast reaches its goal (epoch ms). */
   fastEndsAt?: number;
+  /** Runs and rides whose fuel question is still open: when they ended (epoch ms) and their day. */
+  fuelChecks?: { endedAt: number; date: string }[];
 }
 
 // iOS keeps at most 64 pending notifications per app.
@@ -56,7 +61,7 @@ function at(day: Date, time: string): Date {
 }
 
 export function anyReminderOn(s: ReminderSettings): boolean {
-  return s.breakfast.on || s.lunch.on || s.dinner.on || s.water.on || s.weigh.on || s.fastEnd;
+  return s.breakfast.on || s.lunch.on || s.dinner.on || s.water.on || s.weigh.on || s.fastEnd || s.fuelCheck;
 }
 
 /**
@@ -86,6 +91,12 @@ export function planReminders(s: ReminderSettings, now: Date, ctx: ReminderConte
   out.sort((a, b) => a.at.getTime() - b.at.getTime());
   const planned = out.slice(0, MAX_PENDING - 1);
   if (s.fastEnd && ctx.fastEndsAt && ctx.fastEndsAt > now.getTime()) planned.push({ id: 0, kind: 'fastEnd', at: new Date(ctx.fastEndsAt) });
+  // Asked shortly after the workout (it usually reaches the app a few minutes after it ends).
+  if (s.fuelCheck) {
+    for (const f of (ctx.fuelChecks ?? []).filter((f) => now.getTime() - f.endedAt < 3 * 3_600_000).slice(-2)) {
+      planned.push({ id: 0, kind: 'fuel', at: new Date(Math.max(now.getTime() + 60_000, f.endedAt + 10 * 60_000)) });
+    }
+  }
   return planned.map((r, i) => ({ ...r, id: i + 1 }));
 }
 
@@ -100,6 +111,8 @@ export function reminderRoute(kind: ReminderKind, date: string): string {
       return '/nutrition/progress';
     case 'fastEnd':
       return '/fasting';
+    case 'fuel':
+      return `/nutrition/${date}`;
     default:
       return '/nutrition';
   }

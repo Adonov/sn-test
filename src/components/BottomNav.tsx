@@ -19,13 +19,13 @@ export function BottomNav({ active }: { active: string }) {
       ? 'library'
       : active === 'account' || active === 'reminders' || active === 'health'
         ? 'settings'
-        : active === 'fasting'
+        : active === 'fasting' || active === 'training'
           ? 'nutrition'
           : active;
   return (
     <nav className="bottom-nav" aria-label={t('nav.label')}>
       <div className="brand">
-        <Icon name="logo" /> Forkful
+        <Icon name="logo" /> tAIsty
       </div>
       {ITEMS.map((item) => (
         <a key={item.id} href={item.href} className={current === item.id ? 'active' : ''} aria-current={current === item.id ? 'page' : undefined}>

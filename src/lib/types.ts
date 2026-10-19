@@ -3,6 +3,7 @@ import type { FastingState } from './fasting';
 import type { Profile } from './goals';
 import type { DayActivity, HealthSettings } from './health';
 import type { ReminderSettings } from './reminders';
+import type { Workout } from './workouts';
 import type { FavoriteFood, FoodLogEntry, Nutrients, NutritionGoals, WeightEntry } from './nutrition';
 
 /** The translatable text of a recipe. */
@@ -90,6 +91,8 @@ export interface AppState {
   waterGoal?: number;
   favoriteFoods?: FavoriteFood[];
   fasting?: FastingState;
+  /** Workouts entered by hand (workouts from Apple Health / Health Connect stay in `device`). */
+  workouts?: Workout[];
   /** When the first-launch setup was finished or skipped. */
   onboardedAt?: number;
   /** Settings and data that belong to this device only. Not synced. */
@@ -101,4 +104,8 @@ export interface DeviceState {
   health?: HealthSettings;
   /** Steps and workouts per day (YYYY-MM-DD) read from Apple Health / Health Connect. */
   activity?: Record<string, DayActivity>;
+  /** The last four weeks of workouts from Apple Health / Health Connect. */
+  healthWorkouts?: Workout[];
+  /** Workouts whose fuel question was answered or dismissed. */
+  fuelChecked?: string[];
 }

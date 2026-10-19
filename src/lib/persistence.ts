@@ -1,6 +1,7 @@
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { isNative } from './platform';
 
+// Keys keep the app's former name (Forkful) so data saved before the rename is still found.
 const STORAGE_KEY = 'forkful-state';
 const FILE = 'forkful-state.json';
 

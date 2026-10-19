@@ -119,6 +119,11 @@ export function Reminders() {
         <h2>{t('fasting.title')}</h2>
         <Switch label={t('reminders.fastEnd')} checked={r.fastEnd} onChange={(fastEnd) => update({ ...r, fastEnd })} />
       </section>
+
+      <section className="card">
+        <h2>{t('training.title')}</h2>
+        <Switch label={t('reminders.fuelCheck')} hint={t('reminders.fuelCheckHint')} checked={r.fuelCheck} onChange={(fuelCheck) => update({ ...r, fuelCheck })} />
+      </section>
     </>
   );
 }

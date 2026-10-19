@@ -7,7 +7,7 @@ import { getState, subscribe } from './store';
 import { daySummary } from './today';
 import type { AppState } from './types';
 
-/** Read by the iOS widgets (ios/App/ForkfulWidget). Keep the field names in sync with Snapshot there. */
+/** Read by the iOS widgets (ios/App/TaistyWidget). Keep the field names in sync with Snapshot there. */
 export interface WidgetSnapshot {
   date: string;
   eaten: number;

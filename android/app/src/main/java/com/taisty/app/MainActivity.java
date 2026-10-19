@@ -1,4 +1,4 @@
-package com.forkful.app;
+package com.taisty.app;
 
 import com.getcapacitor.BridgeActivity;
 

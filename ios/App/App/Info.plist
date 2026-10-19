@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Forkful</string>
+        <string>tAIsty</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,20 +23,20 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Forkful uses the camera to scan barcodes and photograph meals and recipes.</string>
+	<string>tAIsty uses the camera to scan barcodes and photograph meals and recipes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Forkful lets you add photos from your library to recipes and your food diary.</string>
+	<string>tAIsty lets you add photos from your library to recipes and your food diary.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Forkful reads your steps, workouts and weight from Apple Health to show calories burned and keep your weight chart up to date.</string>
-	<!-- forkful:// links open the app from the home screen widgets. -->
+	<string>tAIsty reads your steps, workouts and weight from Apple Health to show calories burned and keep your weight chart up to date.</string>
+	<!-- taisty:// links open the app from the home screen widgets. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.forkful.app</string>
+			<string>com.taisty.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>forkful</string>
+				<string>taisty</string>
 			</array>
 		</dict>
 	</array>
