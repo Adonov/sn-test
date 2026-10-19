@@ -1,11 +1,11 @@
 {
-  "name": "tAIsty",
-  "short_name": "tAIsty",
+  "name": "Taisty",
+  "short_name": "Taisty",
   "description": "Recepti, načrt obrokov in nakupovalni seznam na enem mestu.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f6f9f8",
-  "theme_color": "#6aae9f",
+  "background_color": "#f4f5f3",
+  "theme_color": "#121513",
   "lang": "sl",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }

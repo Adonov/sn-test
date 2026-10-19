@@ -1,5 +1,6 @@
 import { useI18n, type MessageKey } from '../i18n';
 import { Icon, type IconName } from './Icon';
+import { Wordmark } from './Wordmark';
 import { useAppState } from '../lib/store';
 
 const ITEMS: { id: string; href: string; label: MessageKey; icon: IconName }[] = [
@@ -25,7 +26,7 @@ export function BottomNav({ active }: { active: string }) {
   return (
     <nav className="bottom-nav" aria-label={t('nav.label')}>
       <div className="brand">
-        <Icon name="logo" /> tAIsty
+        <Icon name="logo" /> <Wordmark />
       </div>
       {ITEMS.map((item) => (
         <a key={item.id} href={item.href} className={current === item.id ? 'active' : ''} aria-current={current === item.id ? 'page' : undefined}>

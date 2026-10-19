@@ -2145,8 +2145,30 @@ h2 {
 }
 
 .welcome-logo {
-  background: var(--ink);
-  color: var(--ink-text);
+  background: none;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.welcome-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.welcome-name {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.wordmark-ai {
+  color: var(--accent);
 }
 
 .plan-kcal .kcal-value {
@@ -2207,4 +2229,12 @@ input.switch:checked {
   color: inherit;
   text-decoration: none;
   margin-top: 1rem;
+}
+
+.bottom-nav .brand {
+  color: var(--text);
+}
+
+.bottom-nav .brand .icon {
+  color: var(--accent);
 }

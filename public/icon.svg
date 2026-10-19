@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#6aae9f"/>
-  <path d="M136 232h240a0 0 0 0 1 0 0c0 66-54 120-120 120s-120-54-120-120z" fill="#fff"/>
-  <rect x="120" y="216" width="272" height="24" rx="12" fill="#fff"/>
-  <path d="M208 184c0-24 24-24 24-48M256 184c0-24 24-24 24-48M304 184c0-24 24-24 24-48" stroke="#fff" stroke-width="16" stroke-linecap="round" fill="none"/>
-  <rect x="176" y="360" width="160" height="20" rx="10" fill="#fff"/>
+  <rect width="512" height="512" rx="112" fill="#121513"/>
+  <g transform="translate(36 36) scale(0.86)">
+  <path d="M124 262h264c0 74-59 132-132 132s-132-58-132-132z" fill="#fff"/>
+  <rect x="104" y="240" width="304" height="30" rx="15" fill="#fff"/>
+  <rect x="200" y="404" width="112" height="22" rx="11" fill="#fff"/>
+  <path d="M256 84 C270.08 133.92 270.08 133.92 320 148 C270.08 162.08 270.08 162.08 256 212 C241.92 162.08 241.92 162.08 192 148 C241.92 133.92 241.92 133.92 256 84Z" fill="#3cbf90"/>
+  <path d="M338 78 C343.72 98.28 343.72 98.28 364 104 C343.72 109.72 343.72 109.72 338 130 C332.28 109.72 332.28 109.72 312 104 C332.28 98.28 332.28 98.28 338 78Z" fill="#3cbf90"/></g>
 </svg>

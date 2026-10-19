@@ -7,7 +7,7 @@ import { healthName } from './Health';
 
 const OTHER_APPS = ['Garmin Connect', 'Polar Flow', 'Suunto', 'COROS', 'Wahoo', 'Zwift', 'Nike Run Club', 'Peloton', 'Fitbit', 'Samsung Health', 'Apple Watch'];
 
-/** Strava, Apple Health / Health Connect and the apps that reach tAIsty through them. */
+/** Strava, Apple Health / Health Connect and the apps that reach Taisty through them. */
 export function Connections() {
   const { device } = useAppState();
   const { t, lang } = useI18n();

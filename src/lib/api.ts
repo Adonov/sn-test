@@ -1,7 +1,7 @@
 import { isNative } from './platform';
 
 /**
- * Base URL of the tAIsty server: the website calls its own origin, the apps the hosted server
+ * Base URL of the Taisty server: the website calls its own origin, the apps the hosted server
  * configured at build time (VITE_API_URL). Undefined in an app build without a server.
  */
 export const API_BASE: string | undefined = isNative ? import.meta.env.VITE_API_URL : '';

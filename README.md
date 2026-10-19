@@ -1,4 +1,4 @@
-# tAIsty 🍲
+# Taisty 🍲
 
 Aplikacija za recepte v slogu [ReciMe](https://www.recime.app/): shrani recepte s spleta in družbenih omrežij,
 načrtuj obroke za cel teden in iz načrta samodejno sestavi nakupovalni seznam.
@@ -59,7 +59,7 @@ Kaj se v aplikacijah razlikuje od spletne različice:
 
 - **Uvoz s povezave deluje brez strežnika** – telefon stran prenese sam (`CapacitorHttp`).
 - **Podatki so shranjeni v datoteki** v prostoru aplikacije (iOS lahko briše podatke brskalnika).
-- **»Deli → tAIsty« na Androidu** – povezavo iz Instagrama, TikToka ali brskalnika deliš neposredno v aplikacijo.
+- **»Deli → Taisty« na Androidu** – povezavo iz Instagrama, TikToka ali brskalnika deliš neposredno v aplikacijo.
 - **»Prilepi in uvozi«** – kopirana povezava se uvozi z enim dotikom (tudi na iOS).
 - Zaslon med kuhanjem ostane prižgan, nakupovalni seznam se deli z izvornim menijem »Deli«.
 
@@ -84,7 +84,7 @@ zasebnosti) je v **[docs/OBJAVA.md](docs/OBJAVA.md)**. Politika zasebnosti je v 
 
 ### Še ni narejeno
 
-- **»Deli → tAIsty« na iOS** zahteva Share Extension, ki jo je treba dodati v Xcodu (vtičnik
+- **»Deli → Taisty« na iOS** zahteva Share Extension, ki jo je treba dodati v Xcodu (vtičnik
   `@capgo/capacitor-share-target` je že nameščen). Do takrat na iOS deluje »Kopiraj povezavo« → »Prilepi in uvozi«.
 - Sinhronizacija med napravami (zahteva uporabniške račune in strežnik).
 

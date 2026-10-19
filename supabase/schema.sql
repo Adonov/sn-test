@@ -1,4 +1,4 @@
--- tAIsty cloud storage. Run once in Supabase: SQL Editor → New query → paste → Run.
+-- Taisty cloud storage. Run once in Supabase: SQL Editor → New query → paste → Run.
 
 -- One row per user holding that user's recipes, meal plan and grocery list.
 create table if not exists public.user_data (

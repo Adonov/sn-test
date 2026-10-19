@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>tAIsty</string>
+        <string>Taisty</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,11 +23,11 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSCameraUsageDescription</key>
-	<string>tAIsty uses the camera to scan barcodes and photograph meals and recipes.</string>
+	<string>Taisty uses the camera to scan barcodes and photograph meals and recipes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>tAIsty lets you add photos from your library to recipes and your food diary.</string>
+	<string>Taisty lets you add photos from your library to recipes and your food diary.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>tAIsty reads your steps, workouts and weight from Apple Health to show calories burned and keep your weight chart up to date.</string>
+	<string>Taisty reads your steps, workouts and weight from Apple Health to show calories burned and keep your weight chart up to date.</string>
 	<!-- taisty:// links open the app from the home screen widgets. -->
 	<key>CFBundleURLTypes</key>
 	<array>

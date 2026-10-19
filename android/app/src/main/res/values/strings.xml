@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">tAIsty</string>
-    <string name="title_activity_main">tAIsty</string>
+    <string name="app_name">Taisty</string>
+    <string name="title_activity_main">Taisty</string>
     <string name="package_name">com.taisty.app</string>
     <string name="custom_url_scheme">com.taisty.app</string>
-    <!-- Shown by Health Connect when the user asks how tAIsty uses health data. -->
+    <!-- Shown by Health Connect when the user asks how Taisty uses health data. -->
     <string name="health_connect_privacy_policy_url">https://taisty.onrender.com/privacy.html</string>
 </resources>

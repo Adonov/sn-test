@@ -3,12 +3,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   // Change to a reverse-domain ID you own before publishing to the App Store / Google Play.
   appId: 'com.taisty.app',
-  appName: 'tAIsty',
+  appName: 'Taisty',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
       launchShowDuration: 600,
-      backgroundColor: '#6aae9f',
+      backgroundColor: '#121513',
       showSpinner: false,
     },
     LocalNotifications: {

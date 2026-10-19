@@ -26,7 +26,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="taisty" />
             </intent-filter>
-            <!-- "Share → tAIsty" from Instagram, TikTok, browsers… -->
+            <!-- "Share → Taisty" from Instagram, TikTok, browsers… -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

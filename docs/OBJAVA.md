@@ -1,4 +1,4 @@
-# Objava aplikacije tAIsty
+# Objava aplikacije Taisty
 
 Vrstni red: **1. strežnik → 2. Supabase za produkcijo → 3. produkcijska gradnja → 4. App Store → 5. Google Play.**
 
@@ -34,7 +34,7 @@ na GitHub – Render se posodobi sam.
 ## 1b. Povezava s Stravo (neobvezno)
 
 1. Prijavi se na [strava.com/settings/api](https://www.strava.com/settings/api) in ustvari aplikacijo:
-   - **Application Name**: tAIsty, **Category**: Training, **Website**: `https://taisty.onrender.com`
+   - **Application Name**: Taisty, **Category**: Training, **Website**: `https://taisty.onrender.com`
    - **Authorization Callback Domain**: `taisty.onrender.com` (za preizkus v simulatorju na Macu: `localhost`)
    - naloži ikono aplikacije.
 2. **Client ID** in **Client Secret** vpiši v Render (**Environment**): `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` in
@@ -46,7 +46,7 @@ na GitHub – Render se posodobi sam.
    Health Connect.
 4. **Smernice blagovne znamke:** pred oddajo gumb »Connect with Strava« in napis »Powered by Strava« zamenjaj z
    uradnima slikama s [developers.strava.com/guidelines](https://developers.strava.com/guidelines/).
-5. **Pogoji Strave:** podatkov iz Strave ne smemo pošiljati v AI modele. Trener v tAIsty dela na napravi s pravili
+5. **Pogoji Strave:** podatkov iz Strave ne smemo pošiljati v AI modele. Trener v Taisty dela na napravi s pravili
    (brez AI), zato je to v redu – tako naj tudi ostane.
 
 ---
@@ -91,7 +91,7 @@ Pred vsako novo oddajo povečaj številko različice:
    → **+** → App IDs → App → Bundle ID `com.taisty.app` (če je zaseden, izberi npr. `com.adonov.taisty`
    in ga enako nastavi v Xcodu in `capacitor.config.ts`).
 3. **App Store Connect** → [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps → + → New App**:
-   platforma iOS, ime *tAIsty* (če je zasedeno, npr. *tAIsty – Recipe Keeper*), primarni jezik, Bundle ID,
+   platforma iOS, ime *Taisty* (če je zasedeno, npr. *Taisty – Recipe Keeper*), primarni jezik, Bundle ID,
    SKU `taisty`.
 
 4. **App Group** (za pripomočke na začetnem zaslonu): [Identifiers](https://developer.apple.com/account/resources/identifiers)
@@ -118,7 +118,7 @@ Pred vsako novo oddajo povečaj številko različice:
 - **Age rating**: odgovori »None« povsod → 4+.
 - **App Review Information → Notes**: »An account is optional. All features work without signing in.
   To test sync, create an account in More → Account. Apple Health: More → Apple Health → Connect. The app only reads
-  steps, workouts and weight and writes nothing. Widgets: long-press the home screen → + → tAIsty.«
+  steps, workouts and weight and writes nothing. Widgets: long-press the home screen → + → Taisty.«
 
 ### App Privacy (vprašalnik v App Store Connect)
 | Podatek | Zbran? | Povezan z uporabnikom | Sledenje | Namen |
@@ -141,7 +141,7 @@ Nato **Add for Review → Submit**. Pregled običajno traja 1–3 dni.
    potrebna je potrditev identitete).
 2. ⚠️ **Novi osebni računi** morajo pred javno objavo izvesti **zaprto testiranje z vsaj 12 testerji 14 dni
    zapored**. Testerje dodaš z e-naslovi (prijatelji, družina), aplikacijo dobijo prek povezave v Trgovini Play.
-3. **Create app** → ime *tAIsty*, brezplačna, aplikacija.
+3. **Create app** → ime *Taisty*, brezplačna, aplikacija.
 
 ### Podpisan paket
 1. Namesti [Android Studio](https://developer.android.com/studio), nato `npx cap open android`.
@@ -175,15 +175,15 @@ the user's calorie goal; imports weight from smart scales into the weight log.«
 ## Besedila za trgovini
 
 ### English
-- **Name**: tAIsty
+- **Name**: Taisty
 - **Subtitle** (iOS, max 30): AI calorie counter & recipes
 - **Short description** (Android, max 80): Save recipes from any website or social post, plan meals, shop smarter.
 - **Keywords** (iOS, max 100): recipe,recipes,meal planner,grocery list,cooking,recipe keeper,shopping list,food,cookbook
 - **Description**:
 
-  > tAIsty keeps all your recipes in one calm, simple place.
+  > Taisty keeps all your recipes in one calm, simple place.
   >
-  > • Import recipes from any website, Instagram, TikTok or Pinterest – or paste the caption and tAIsty finds the
+  > • Import recipes from any website, Instagram, TikTok or Pinterest – or paste the caption and Taisty finds the
   >   ingredients and steps for you.
   > • Change servings and every amount updates instantly.
   > • Cook step by step with large text, built-in timers and a screen that stays on.
@@ -212,10 +212,10 @@ the user's calorie goal; imports weight from smart scales into the weight log.«
 - **Ključne besede**: recepti,recept,načrt obrokov,nakupovalni seznam,kuhanje,kuharska knjiga,hrana,nakupi
 - **Opis**:
 
-  > tAIsty hrani vse tvoje recepte na enem mirnem, preprostem mestu.
+  > Taisty hrani vse tvoje recepte na enem mirnem, preprostem mestu.
   >
   > • Uvozi recepte s katerekoli spletne strani, Instagrama, TikToka ali Pinteresta – ali prilepi opis objave in
-  >   tAIsty sam najde sestavine in korake.
+  >   Taisty sam najde sestavine in korake.
   > • Spremeni število porcij in vse količine se takoj preračunajo.
   > • Kuhaj korak za korakom z velikimi črkami, časovniki in zaslonom, ki ostane prižgan.
   > • Načrtuj teden in ga spremeni v en nakupovalni seznam, združen in razvrščen po oddelkih.

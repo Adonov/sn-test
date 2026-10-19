@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../components/Icon';
+import { Wordmark } from '../components/Wordmark';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
 import { cloudConfigured } from '../lib/cloud';
 import { toISODate } from '../lib/dates';
@@ -130,7 +131,10 @@ export function Welcome() {
         {step === 'welcome' && (
           <div className="welcome-hero">
             <div className="welcome-logo" aria-hidden>
-              <Icon name="logo" size={44} />
+              <img src="/icon.svg" alt="" width={88} height={88} />
+            </div>
+            <div className="welcome-name">
+              <Wordmark />
             </div>
             <h1>{t('welcome.title')}</h1>
             <p className="muted">{t('welcome.subtitle')}</p>
