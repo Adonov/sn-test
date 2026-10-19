@@ -96,7 +96,7 @@ private let proteinColor = Color(red: 0.92, green: 0.41, blue: 0.20)
 private let carbsColor = Color(red: 0.16, green: 0.47, blue: 0.84)
 private let fatColor = Color(red: 0.93, green: 0.63, blue: 0.0)
 private let blue = Color(red: 0.16, green: 0.44, blue: 0.75)
-private let background = Color(UIColor { traits in
+private let widgetBackgroundColor = Color(UIColor { traits in
     traits.userInterfaceStyle == .dark
         ? UIColor(red: 0.09, green: 0.10, blue: 0.10, alpha: 1)
         : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
@@ -105,9 +105,9 @@ private let background = Color(UIColor { traits in
 extension View {
     @ViewBuilder func widgetBackground() -> some View {
         if #available(iOSApplicationExtension 17.0, *) {
-            containerBackground(background, for: .widget)
+            containerBackground(widgetBackgroundColor, for: .widget)
         } else {
-            padding().background(background)
+            padding().background(widgetBackgroundColor)
         }
     }
 }
