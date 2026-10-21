@@ -170,6 +170,78 @@ the user's calorie goal; imports weight from smart scales into the weight log.«
 - **Posnetki**: vsaj 2 posnetka telefona (lahko iz Android emulatorja ali kar iz iPhone simulatorja), ikona 512×512
   (`assets/icon-only.png` pomanjšana), grafika 1024×500.
 
+## 6. Taisty Premium (naročnina)
+
+Brez naročnine dobi uporabnik **5 AI ocen na teden** (fotografija, opis, hranila recepta, popravek). Premium
+odklene neomejeno. Dokler ključev RevenueCat ni v `.env`, omejitve ni in stran *Premium* se ne prikaže.
+
+> Pred tem morata biti v App Store Connect podpisana **Paid Apps Agreement** (Business → Agreements, z bančnim
+> računom in davčnimi podatki), v Play Console pa **Payments profile**. Brez tega nakupi ne delujejo.
+
+### 6a. Izdelki v trgovinah
+**App Store Connect** → aplikacija Taisty → **Monetization → Subscriptions**:
+1. **Create subscription group** → ime *Taisty Premium*.
+2. V skupini dodaj dve naročnini:
+   - *Reference name* `Premium monthly`, *Product ID* `taisty_premium_monthly`, trajanje **1 month**, cena npr. 4,99 €
+   - *Reference name* `Premium yearly`, *Product ID* `taisty_premium_yearly`, trajanje **1 year**, cena npr. 29,99 €
+3. Pri vsaki dodaj ime in opis (npr. »Unlimited AI meal estimates«) ter posnetek zaslona strani Premium (za pregled).
+4. Neobvezno: **Introductory offer → Free trial 1 week**.
+
+**Play Console** → **Monetize → Products → Subscriptions → Create subscription**:
+- `taisty_premium_monthly` z osnovnim paketom (*base plan*) **monthly**, auto-renewing, 4,99 €
+- `taisty_premium_yearly` z osnovnim paketom **yearly**, 29,99 €
+- Vsak base plan **Activate**.
+
+### 6b. RevenueCat
+1. Račun na [app.revenuecat.com](https://app.revenuecat.com) (brezplačno do 2.500 $ mesečnega prihodka, nato 1 %).
+2. **Create project** → *Taisty*.
+3. **Apps → + App Store**: Bundle ID `com.taisty.app`, nato po navodilih naloži **In-App Purchase Key** (App Store
+   Connect → Users and Access → Integrations → In-App Purchase → Generate).
+4. **Apps → + Play Store**: package `com.taisty.app`, nato po navodilih naloži **service account JSON** iz Google
+   Cloud (RevenueCat ima vodnik korak za korakom; aktivacija lahko traja do 36 ur).
+5. **Product catalog → Entitlements → + New** → identifier **`premium`** (točno tako).
+6. **Products → Import** iz obeh trgovin in vse štiri izdelke pripni na entitlement `premium`.
+7. **Offerings → default** → dodaj paketa **Monthly** (`$rc_monthly`) in **Annual** (`$rc_annual`) z ustreznimi
+   izdelki za iOS in Android. Offering `default` mora biti označen kot **Current**.
+8. **API keys** → kopiraj *public* ključa (iOS se začne z `appl_`, Android z `goog_`) v `.env`:
+
+```
+VITE_REVENUECAT_IOS_KEY=appl_...
+VITE_REVENUECAT_ANDROID_KEY=goog_...
+```
+
+To sta javna ključa (sta v aplikaciji), zato nista skrivnost. Nato `npm run build && npx cap sync`.
+
+### 6c. Preizkus nakupa
+- **iPhone**: App Store Connect → Users and Access → **Sandbox → Test accounts** → dodaj testni Apple ID. Na
+  telefonu: Nastavitve → App Store → **Sandbox Account** → prijava. Nakup v aplikaciji je nato brezplačen, mesečna
+  naročnina se podaljša vsakih 5 minut.
+- **Android**: Play Console → Settings → **License testing** → dodaj svoj Gmail. Aplikacijo namesti iz zaprtega
+  testiranja.
+- V aplikaciji: Nastavitve → *Taisty Premium* → izberi paket → Nadaljuj. Po nakupu piše »Premium je vklopljen«.
+  Preizkusi tudi **Obnovi nakupe** (izbriši aplikacijo, namesti znova).
+
+### 6d. App Review
+Apple zahteva na strani nakupa ceno, trajanje, samodejno podaljševanje ter povezavi na zasebnost in pogoje – vse to
+stran Premium že prikazuje (pogoji so Applova standardna licenca EULA). V App Store Connect pri aplikaciji v polje
+**License Agreement** pusti *Apple's Standard License Agreement*.
+
+V **App Privacy** (Apple) in **Data safety** (Google) dodaj še *Purchases → Purchase history* (App functionality,
+ni povezano z oglaševanjem) in *Diagnostics → Crash data* (poročila o napakah, ni povezano z uporabnikom).
+
+---
+
+## 7. Poročila o napakah
+
+Ko v aplikaciji pride do nepričakovane napake, pošlje kratko poročilo strežniku (brez receptov, dnevnika ali
+zdravstvenih podatkov). Najdeš jih na Renderju: **taisty → Logs** → v iskanje vpiši `[client-error]`. Če se ista
+napaka ponavlja, mi kopiraj vrstico in jo popravim.
+
+## 8. Natančnost AI ocen
+
+Glej [`eval/README.md`](../eval/README.md): fotografiraš stehtane obroke, vpišeš prave vrednosti in zaženeš
+`npm run eval:photos`.
+
 ---
 
 ## Besedila za trgovini

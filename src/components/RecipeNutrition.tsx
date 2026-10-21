@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useI18n } from '../i18n';
 import { toISODate } from '../lib/dates';
 import { NUTRIENTS, formatNutrient } from '../lib/nutrition';
+import { ApiError } from '../lib/api';
 import { estimateRecipeNutrition } from '../lib/nutritionApi';
+import { navigate } from '../lib/router';
 import { addDiaryEntries } from '../lib/store';
 import type { Recipe } from '../lib/types';
 import { slotForNow } from '../pages/AddFood';
@@ -21,7 +23,8 @@ export function RecipeNutrition({ recipe, onLogged }: { recipe: Recipe; onLogged
       await estimateRecipeNutrition(recipe);
     } catch (err) {
       console.warn(err);
-      setError(true);
+      if (err instanceof ApiError && err.code === 'premium_required') navigate('/premium');
+      else setError(true);
     } finally {
       setBusy(false);
     }

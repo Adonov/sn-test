@@ -133,6 +133,31 @@ function readJson(req, maxBytes = 50_000) {
   });
 }
 
+// Error reports from the apps: a few per address and hour are plenty to see what breaks.
+const ERROR_REPORTS_PER_HOUR = 20;
+const errorReports = new Map();
+
+function logClientError(req, report) {
+  const key = clientAddress(req);
+  const now = Date.now();
+  const recent = (errorReports.get(key) ?? []).filter((t) => now - t < 3_600_000);
+  if (recent.length >= ERROR_REPORTS_PER_HOUR) return;
+  recent.push(now);
+  errorReports.set(key, recent);
+  if (errorReports.size > 10_000) errorReports.clear();
+  const text = (v, max) => (typeof v === 'string' ? v.slice(0, max) : undefined);
+  console.error(
+    '[client-error]',
+    JSON.stringify({
+      kind: text(report?.kind, 20),
+      message: text(report?.message, 500),
+      route: text(report?.route, 100),
+      platform: text(report?.platform, 20),
+      stack: text(report?.stack, 4000),
+    }),
+  );
+}
+
 function send(res, status, data) {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json; charset=utf-8');
@@ -188,6 +213,10 @@ export async function handleApi(req, res) {
     }
     if (path === '/api/strava/deauthorize' && req.method === 'POST') {
       await deauthorize(String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, ''));
+      return send(res, 200, { ok: true });
+    }
+    if (path === '/api/errors' && req.method === 'POST') {
+      logClientError(req, await readJson(req, 20_000));
       return send(res, 200, { ok: true });
     }
     if (path === '/api/health') return send(res, 200, { ok: true });

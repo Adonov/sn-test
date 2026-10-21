@@ -3,6 +3,7 @@ import { CapacitorShareTarget } from '@capgo/capacitor-share-target';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { syncHealth } from './healthSync';
 import { refreshReminders, setupReminders } from './notify';
+import { setupPremium } from './premium';
 import { navigate } from './router';
 import { setPendingShare } from './store';
 import { finishStravaAuth, syncStrava } from './strava';
@@ -43,6 +44,7 @@ export function setupNative(): void {
     refreshReminders();
   }).catch(() => {});
 
+  setupPremium();
   setupWidgets();
   setupReminders();
   syncHealth();

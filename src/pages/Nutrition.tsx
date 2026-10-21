@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { Ring } from '../components/Ring';
 import { useI18n } from '../i18n';
+import { ApiError } from '../lib/api';
 import { addDays, formatDay, fromISODate, toISODate } from '../lib/dates';
 import {
   DEFAULT_GOALS,
@@ -16,6 +17,7 @@ import {
 } from '../lib/nutrition';
 import { waterGoal } from '../lib/goals';
 import { localize } from '../lib/localize';
+import { navigate } from '../lib/router';
 import { loggingStreak } from '../lib/nutritionStats';
 import { estimateRecipeNutrition } from '../lib/nutritionApi';
 import { addDiaryEntries, addWater, allWorkouts, removeDiaryEntry, toggleFavoriteFood, updateDiaryEntry, useAppState } from '../lib/store';
@@ -71,6 +73,7 @@ export function Nutrition({ date: dateParam }: { date?: string }) {
       addDiaryEntries([{ date, slot, name: recipe.title, amount: 1, unit: 'serving', perUnit, source: 'recipe', recipeId: recipe.id }]);
     } catch (err) {
       console.warn(err);
+      if (err instanceof ApiError && err.code === 'premium_required') navigate('/premium');
     } finally {
       setLoggingPlanned(undefined);
     }

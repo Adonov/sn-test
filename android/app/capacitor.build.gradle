@@ -20,6 +20,7 @@ dependencies {
     implementation project(':capacitor-splash-screen')
     implementation project(':capgo-capacitor-health')
     implementation project(':capgo-capacitor-share-target')
+    implementation project(':revenuecat-purchases-capacitor')
 
 }
 

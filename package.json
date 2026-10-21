@@ -10,6 +10,7 @@
     "start": "node server/index.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "eval:photos": "node scripts/eval-photos.mjs",
     "cap:sync": "npm run build && cap sync",
     "android": "npm run build && cap sync android && cap open android",
     "ios": "npm run build && cap sync ios && cap open ios"
@@ -31,6 +32,7 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capgo/capacitor-health": "^8.11.12",
     "@capgo/capacitor-share-target": "^8.0.62",
+    "@revenuecat/purchases-capacitor": "^13.7.4",
     "@supabase/supabase-js": "^2.118.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

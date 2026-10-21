@@ -2238,3 +2238,29 @@ input.switch:checked {
 .bottom-nav .brand .icon {
   color: var(--accent);
 }
+
+/* ---- Premium ---- */
+.premium-hero {
+  text-align: center;
+  margin: 8px 0 20px;
+}
+.premium-hero .welcome-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.premium-badge {
+  font: 700 0.75rem/1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--ink-text);
+}
+.premium-points {
+  margin: 0;
+}
+.ai-left {
+  margin: -4px 4px 12px;
+}

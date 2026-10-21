@@ -1,0 +1,4 @@
+file,kcal,protein,carbs,fat
+# One row per photo: the file name in this folder and the meal's real values (from weighing + food labels).
+kosilo-1.jpg,650,38,70,22
+zajtrk-1.jpg,420,18,55,14

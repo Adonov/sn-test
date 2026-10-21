@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon';
 import { LANGUAGES, useI18n, type Language } from '../i18n';
 import { cloudConfigured, useAccount } from '../lib/cloud';
 import { API_BASE } from '../lib/api';
+import { premiumAvailable, usePremium } from '../lib/premium';
 import { exportBackup, importBackup, resetAll, setLanguage, useAppState } from '../lib/store';
 import { healthName } from './Health';
 
@@ -13,6 +14,7 @@ export function Settings() {
   const { recipes, plan, device } = useAppState();
   const { t, lang } = useI18n();
   const { user } = useAccount();
+  const { premium, left } = usePremium();
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string>();
 
@@ -48,6 +50,20 @@ export function Settings() {
           <a className={`btn ${user ? '' : 'primary'}`} href="#/account">
             {user ? t('account.title') : t('account.cta')}
           </a>
+        </section>
+      )}
+
+      {premiumAvailable && (
+        <section className="card">
+          <nav className="link-list">
+            <a href="#/premium">
+              <span>
+                Taisty Premium
+                <small className="muted block">{premium ? t('premium.active') : t('premium.left', { count: left })}</small>
+              </span>
+              <Chevron />
+            </a>
+          </nav>
         </section>
       )}
 

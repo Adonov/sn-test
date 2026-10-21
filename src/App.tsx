@@ -24,6 +24,7 @@ import { Reminders } from './pages/Reminders';
 import { Welcome } from './pages/Welcome';
 import { Training } from './pages/Training';
 import { Connections } from './pages/Connections';
+import { Premium } from './pages/Premium';
 import { NotFound } from './components/NotFound';
 
 export function App() {
@@ -78,6 +79,9 @@ export function App() {
       break;
     case 'training':
       content = <Training />;
+      break;
+    case 'premium':
+      content = <Premium />;
       break;
     case 'reminders':
       content = <Reminders />;

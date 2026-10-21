@@ -113,4 +113,8 @@ export interface DeviceState {
   stravaWorkouts?: Workout[];
   /** Workouts whose fuel question was answered or dismissed. */
   fuelChecked?: string[];
+  /** Free AI estimates used this week (Monday, YYYY-MM-DD). */
+  aiUsage?: { week: string; used: number };
+  /** Last known Taisty Premium status, so it holds while offline. */
+  premium?: boolean;
 }

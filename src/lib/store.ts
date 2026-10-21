@@ -138,6 +138,15 @@ export function setReminders(reminders: ReminderSettings): void {
   setDevice((d) => ({ ...d, reminders }));
 }
 
+/** Counts one AI estimate against this week's free ones. */
+export function recordAiUse(week: string): void {
+  setDevice((d) => ({ ...d, aiUsage: { week, used: (d.aiUsage?.week === week ? d.aiUsage.used : 0) + 1 } }));
+}
+
+export function setPremium(premium: boolean): void {
+  if (state.device?.premium !== premium) setDevice((d) => ({ ...d, premium }));
+}
+
 export function setHealthSettings(patch: Partial<NonNullable<DeviceState['health']>>): void {
   setDevice((d) => ({ ...d, health: { enabled: false, addExercise: true, ...d.health, ...patch } }));
 }

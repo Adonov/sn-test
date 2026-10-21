@@ -10,6 +10,7 @@ import { localize } from '../lib/localize';
 import { scaleNutrients, type FavoriteFood, type FoodLogEntry, type FoodUnit, type Nutrients } from '../lib/nutrition';
 import { recentFoods } from '../lib/nutritionStats';
 import { estimateFoods, estimateRecipeNutrition } from '../lib/nutritionApi';
+import { usePremium } from '../lib/premium';
 import { navigate } from '../lib/router';
 import { scanBarcode } from '../lib/scanner';
 import { addDiaryEntries, useAppState } from '../lib/store';
@@ -71,8 +72,11 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
   const [fix, setFix] = useState('');
   const localized = useMemo(() => recipes.map((r) => localize(r, lang)), [recipes, lang]);
 
+  const { left } = usePremium();
+
   const fail = (err: unknown) => {
     console.warn(err);
+    if (err instanceof ApiError && err.code === 'premium_required') return navigate('/premium');
     setMessage(err instanceof ApiError && (err.code === 'not_configured' || err.status === 0) ? t('add.aiUnavailable') : t('add.error'));
   };
 
@@ -322,6 +326,13 @@ export function AddFood({ date: dateParam, slot: slotParam }: { date?: string; s
           </button>
         </div>
       </form>
+
+      {left !== Infinity && (
+        <p className="muted small ai-left">
+          {t('premium.left', { count: left })}{' '}
+          <a href="#/premium">{t('premium.unlock')}</a>
+        </p>
+      )}
 
       {message && <p className="notice">{message}</p>}
 
