@@ -1,22 +1,13 @@
-import { useEffect, useState } from "react";
-import { Icon } from "../components/Icon";
-import { Wordmark } from "../components/Wordmark";
-import { useI18n } from "../i18n";
-import { API_BASE } from "../lib/api";
-import {
-  buy,
-  FREE_AI_PER_WEEK,
-  loadPlans,
-  premiumAvailable,
-  restore,
-  usePremium,
-  type Plan,
-} from "../lib/premium";
+import { useEffect, useState } from 'react';
+import { Icon } from '../components/Icon';
+import { Wordmark } from '../components/Wordmark';
+import { useI18n } from '../i18n';
+import { API_BASE } from '../lib/api';
+import { buy, FREE_AI_PER_WEEK, loadPlans, premiumAvailable, restore, usePremium, type Plan } from '../lib/premium';
 
-const PRIVACY_URL = `${API_BASE ?? ""}/privacy.html`;
+const PRIVACY_URL = `${API_BASE ?? ''}/privacy.html`;
 // Apple's standard licence agreement covers the subscription terms.
-const TERMS_URL =
-  "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 /** What Premium unlocks and the plans to buy it. */
 export function Premium() {
@@ -32,7 +23,7 @@ export function Premium() {
     loadPlans()
       .then((list) => {
         setPlans(list);
-        setChosen((list.find((p) => p.period === "annual") ?? list[0])?.id);
+        setChosen((list.find((p) => p.period === 'annual') ?? list[0])?.id);
       })
       .catch((err) => {
         console.warn(err);
@@ -49,7 +40,7 @@ export function Premium() {
       if (!(await action())) setMessage(failed);
     } catch (err) {
       console.warn(err);
-      setMessage(t("premium.error"));
+      setMessage(t('premium.error'));
     } finally {
       setBusy(false);
     }
@@ -58,11 +49,7 @@ export function Premium() {
   return (
     <>
       <header className="page-header">
-        <button
-          className="icon-btn"
-          onClick={() => history.back()}
-          aria-label={t("detail.back")}
-        >
+        <button className="icon-btn" onClick={() => history.back()} aria-label={t('detail.back')}>
           <Icon name="back" size={20} />
         </button>
       </header>
@@ -71,36 +58,32 @@ export function Premium() {
         <div className="welcome-name">
           <Wordmark /> <span className="premium-badge">Premium</span>
         </div>
-        <h1>{premium ? t("premium.active") : t("premium.title")}</h1>
-        {!premium && left !== Infinity && (
-          <p className="muted">{t("premium.left", { count: left })}</p>
-        )}
+        <h1>{premium ? t('premium.active') : t('premium.title')}</h1>
+        {!premium && left !== Infinity && <p className="muted">{t('premium.left', { count: left })}</p>}
       </div>
 
       <section className="card">
         <ul className="welcome-points premium-points">
           <li>
-            <Icon name="camera" /> {t("premium.point1")}
+            <Icon name="camera" /> {t('premium.point1')}
           </li>
           <li>
-            <Icon name="sparkle" /> {t("premium.point2")}
+            <Icon name="sparkle" /> {t('premium.point2')}
           </li>
           <li>
-            <Icon name="book" /> {t("premium.point3")}
+            <Icon name="book" /> {t('premium.point3')}
           </li>
         </ul>
       </section>
-      <p className="muted small">
-        {t("premium.free", { count: FREE_AI_PER_WEEK })}
-      </p>
+      <p className="muted small">{t('premium.free', { count: FREE_AI_PER_WEEK })}</p>
 
       {!premium &&
         (!premiumAvailable ? (
-          <p className="notice">{t("premium.appOnly")}</p>
+          <p className="notice">{t('premium.appOnly')}</p>
         ) : !plans ? (
-          <p className="muted">{t("premium.loading")}</p>
+          <p className="muted">{t('premium.loading')}</p>
         ) : !plans.length ? (
-          <p className="notice">{t("premium.noPlans")}</p>
+          <p className="notice">{t('premium.noPlans')}</p>
         ) : (
           <>
             <div className="option-list" role="radiogroup">
@@ -109,32 +92,18 @@ export function Premium() {
                   key={p.id}
                   role="radio"
                   aria-checked={chosen === p.id}
-                  className={`option ${chosen === p.id ? "active" : ""}`}
+                  className={`option ${chosen === p.id ? 'active' : ''}`}
                   onClick={() => setChosen(p.id)}
                 >
-                  <b>
-                    {p.period === "other"
-                      ? p.pkg.product.title
-                      : t(`premium.${p.period}`)}
-                  </b>
-                  <small>
-                    {p.period === "other"
-                      ? p.price
-                      : t(`premium.${p.period}Price`, { price: p.price })}
-                  </small>
+                  <b>{p.period === 'other' ? p.pkg.product.title : t(`premium.${p.period}`)}</b>
+                  <small>{p.period === 'other' ? p.price : t(`premium.${p.period}Price`, { price: p.price })}</small>
                 </button>
               ))}
             </div>
-            <button
-              className="btn primary wide"
-              disabled={busy || !plan}
-              onClick={() =>
-                plan && run(() => buy(plan), t("premium.cancelled"))
-              }
-            >
-              {t("premium.subscribe")}
+            <button className="btn primary wide" disabled={busy || !plan} onClick={() => plan && run(() => buy(plan), t('premium.cancelled'))}>
+              {t('premium.subscribe')}
             </button>
-            <p className="muted small">{t("premium.renews")}</p>
+            <p className="muted small">{t('premium.renews')}</p>
           </>
         ))}
 
@@ -142,22 +111,18 @@ export function Premium() {
 
       {premiumAvailable && !premium && (
         <p className="center">
-          <button
-            className="link-btn"
-            disabled={busy}
-            onClick={() => run(restore, t("premium.nothingToRestore"))}
-          >
-            {t("premium.restore")}
+          <button className="link-btn" disabled={busy} onClick={() => run(restore, t('premium.nothingToRestore'))}>
+            {t('premium.restore')}
           </button>
         </p>
       )}
       <p className="center small">
         <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
-          {t("settings.privacy")}
+          {t('settings.privacy')}
         </a>
-        {" · "}
+        {' · '}
         <a href={TERMS_URL} target="_blank" rel="noreferrer noopener">
-          {t("premium.terms")}
+          {t('premium.terms')}
         </a>
       </p>
     </>
