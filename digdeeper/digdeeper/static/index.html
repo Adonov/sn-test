@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DigDeeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23ff5a1f'/><circle cx='16' cy='16' r='5' fill='%23151210'/></svg>">
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="#/">DigDeeper<span>.</span></a>
+    <nav>
+      <a href="#/" data-nav="home"><i data-icon="home"></i>Home</a>
+      <a href="#/dig" data-nav="dig"><i data-icon="search"></i>Dig</a>
+      <a href="#/playlists" data-nav="playlists"><i data-icon="list"></i>Playlists</a>
+      <a href="#/collection" data-nav="collection"><i data-icon="disc"></i>Collection</a>
+      <a href="#/sets" data-nav="sets"><i data-icon="headphones"></i>Sets</a>
+    </nav>
+    <div class="catalog-count" id="catalog-count"></div>
+  </header>
+  <main id="view"></main>
+  <div id="player" class="player" hidden></div>
+  <div id="drop-overlay" class="drop-overlay" hidden><div>Drop a track or DJ set</div></div>
+  <div id="toast" class="toast" hidden></div>
+  <input type="file" id="file-input" accept="audio/*,video/mp4,video/webm,.flac,.aiff,.aif,.m4a,.opus" hidden>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
