@@ -12,8 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import audio, links
-from .deezer import Deezer
-from .jobs import PLATFORMS, Jobs
+from .deezer import Deezer, track_meta
+from .jobs import PLATFORMS, Jobs, _preview_worker, pool
 from .library import Library, _norm_name
 
 STATIC = Path(__file__).parent / 'static'
@@ -110,6 +110,43 @@ def create_app(lib=None):
         if not img:
             raise HTTPException(404)
         return Response(img, media_type='image/jpeg', headers={'Cache-Control': 'max-age=86400'})
+
+    # ---------- iskanje po spletu (Deezer) ----------
+
+    @app.get('/api/online/search')
+    def online_search(q: str, limit: int = 30):
+        """Komadi z Deezerja za iskalni niz; tisti, ki so že v katalogu, imajo id."""
+        if not q.strip():
+            return []
+        try:
+            hits = dz.get('/search', q=q.strip(), limit=min(limit, 100)).get('data', [])
+        except Exception as e:  # noqa: BLE001
+            raise HTTPException(502, f'Deezer: {e}')
+        return [{**track_meta(t), 'id': lib.find_id('deezer', t['id']), 'deezer_id': t['id'],
+                 'preview': t.get('preview'), 'artist_id': (t.get('artist') or {}).get('id'), 'source': 'deezer'}
+                for t in hits if t.get('readable', True)]
+
+    class OnlineDig(BaseModel):
+        deezer_id: int
+        grow: bool = True
+
+    @app.post('/api/online/dig')
+    def online_dig(body: OnlineDig):
+        """Doda komad z Deezerja v katalog in v ozadju zajame njegovega izvajalca in sorodne izvajalce."""
+        tid = lib.find_id('deezer', body.deezer_id)
+        t = dz.get(f'/track/{body.deezer_id}')
+        if not tid:
+            if not t.get('preview'):
+                raise HTTPException(400, 'Deezer nima predposlušanja za ta komad')
+            _, res, err = pool().submit(_preview_worker, (t['id'], t['preview'])).result()
+            if err:
+                raise HTTPException(502, f'Analiza ni uspela: {err}')
+            tid = lib.add_track('deezer', t['id'], res['vec'], bpm=res['bpm'], key=res['key'], camelot=res['camelot'], **track_meta(t))
+        job = None
+        artist = (t.get('artist') or {}).get('id')
+        if body.grow and artist:
+            job = jobs.import_sources([f'https://www.deezer.com/artist/{artist}'], 'deezer', max_tracks=400, per_artist=15, related=True)
+        return {'id': tid, 'job': job and job['id']}
 
     # ---------- analize: naloži komad ali set ----------
 

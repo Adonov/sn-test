@@ -79,7 +79,7 @@ function fallbackCover(seed) {
 }
 function cover(t, cls = '') {
   const fb = fallbackCover(t.id ?? t.name)
-  const src = t.id ? `/api/tracks/${t.id}/cover` : fb
+  const src = t.id ? `/api/tracks/${t.id}/cover` : t.cover || fb
   return `<img class="cover ${cls}" loading="lazy" src="${src}" data-fb="${fb}" onerror="this.onerror=null;this.src=this.dataset.fb" alt="">`
 }
 
@@ -488,18 +488,64 @@ function analysisCard(a, extra = '') {
 async function digSearchPage() {
   const q = store.get('digQuery', '')
   view.innerHTML = `
-    <div class="search-bar"><input type="search" id="dig-q" placeholder="Search your catalog by artist or title, then dig from it…" value="${esc(q)}" autofocus></div>
-    <div class="dropzone" data-act="upload" style="margin-bottom:28px"><b>Or drop any audio file</b>A track (MP3, WAV, FLAC, AIFF …) or a full DJ set</div>
-    <div id="dig-results"></div>`
+    <div class="search-bar"><input type="search" id="dig-q" placeholder="Search any artist or track…" value="${esc(q)}" autofocus></div>
+    <div id="dig-results"></div>
+    <div id="web-results"></div>
+    <div class="dropzone" data-act="upload" style="margin-top:28px"><b>Or drop any audio file</b>A track (MP3, WAV, FLAC, AIFF …) or a full DJ set</div>`
   const input = $('#dig-q')
-  let timer
+  let timer, seq = 0
   const run = async () => {
-    store.set('digQuery', input.value)
-    const tracks = await api(`/api/tracks?limit=100&q=${encodeURIComponent(input.value)}`)
-    $('#dig-results').innerHTML = trackList(tracks, { empty: 'No tracks in your catalog match. <a class="accent" href="#/collection">Add music →</a>' })
+    const query = input.value.trim()
+    const mine = ++seq
+    store.set('digQuery', query)
+    const tracks = await api(`/api/tracks?limit=100&q=${encodeURIComponent(query)}`)
+    if (mine !== seq) return
+    $('#dig-results').innerHTML = tracks.length
+      ? `<div class="section-title" style="margin-top:0"><h2>In your catalog</h2><span class="label">${tracks.length}</span></div>${trackList(tracks)}`
+      : ''
+    if (!query) { $('#web-results').innerHTML = ''; return }
+    $('#web-results').innerHTML = '<div class="section-title"><h2>On the web</h2><span class="label">searching Deezer…</span></div>'
+    try {
+      const web = (await api(`/api/online/search?q=${encodeURIComponent(query)}`)).filter((t) => !t.id)
+      if (mine !== seq) return
+      const id = String(++listSeq)
+      lists.set(id, web.map((t) => ({ ...t, src: t.preview })))
+      $('#web-results').innerHTML = `<div class="section-title"><h2>On the web</h2><span class="label">Deezer · ${web.length}</span></div>
+        ${web.length ? `<div class="tracks">${web.map((t, i) => webRow(t, id, i)).join('')}</div>` : '<div class="empty">Nothing found.</div>'}`
+    } catch (err) {
+      $('#web-results').innerHTML = `<div class="empty">Online search failed: ${esc(err.message)}</div>`
+    }
   }
-  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 200) })
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 350) })
+  $('#web-results').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-webdig]')
+    if (!b) return
+    b.disabled = true
+    b.textContent = 'Listening…'
+    try {
+      const r = await api('/api/online/dig', { json: { deezer_id: Number(b.dataset.webdig) } })
+      location.hash = `#/dig/track/${r.id}`
+    } catch (err) {
+      toast(err.message)
+      b.disabled = false
+      b.innerHTML = `Dig ${icon('chevR')}`
+    }
+  })
   run()
+}
+
+function webRow(t, listId, i) {
+  return `<div class="track" data-web="${t.deezer_id}">
+    <button class="play" data-act="play" data-list="${listId}" data-i="${i}" title="Play preview">${icon('play')}</button>
+    <img class="cover" loading="lazy" src="${esc(t.cover || fallbackCover(t.deezer_id))}" alt="">
+    <div style="min-width:0">
+      <div class="name">${esc(t.title)}${t.artist ? `<span class="sep">·</span><span class="artist">${esc(t.artist)}</span>` : ''}</div>
+      <div class="meta">${t.album ? `<span>${esc(t.album)}</span>` : ''}${t.duration ? `<span>${fmtTime(t.duration)}</span>` : ''}</div>
+    </div>
+    <div class="actions">
+      <button class="chip-btn primary" data-webdig="${t.deezer_id}" title="Analyze it and find similar tracks">Dig ${icon('chevR')}</button>
+    </div>
+  </div>`
 }
 
 const bpmFilter = () => store.get('bpmTol', 0)
@@ -521,27 +567,54 @@ function bindToolbar(reload) {
 const similarQuery = () => `k=${resultCount()}${bpmFilter() ? `&bpm_tol=${bpmFilter()}` : ''}`
 
 async function digTrackPage(id) {
-  const load = async () => {
-    const r = await api(`/api/tracks/${id}/similar?${similarQuery()}`)
-    const t = r.reference
-    trackById.set(t.id, t)
-    view.innerHTML = `
-      <a class="back label" href="#/dig">${icon('arrowL')} Dig</a>
-      <div class="panel">
-        <div class="ref-head">
-          <button class="icon-btn" data-act="play" data-list="${(lists.set('ref' + t.id, [t]), 'ref' + t.id)}" data-i="0">${icon('play')}</button>
-          ${cover(t, 'lg')}
-          <div><div class="title">${esc(t.title)} <span class="artist">· ${esc(t.artist || '')}</span></div>
-            <div class="sub">${t.duration ? fmtTime(t.duration) : ''}${t.bpm ? `<span>${Math.round(t.bpm)} BPM</span>` : ''}${t.camelot ? `<span class="keych">${t.camelot}</span>` : ''}<span class="label">${t.source === 'local' ? 'Your library' : 'Deezer preview'}</span></div></div>
-          <span class="spacer"></span><span class="label">Reference</span>
-        </div>
-        <div class="tabs"><button class="active">Similar tracks <span class="count">${r.results.length}</span></button></div>
-        ${digToolbar()}
-        ${trackList(r.results, { ranked: true, empty: 'Your catalog needs more tracks to compare against. <a class="accent" href="#/collection">Add music →</a>' })}
-      </div>`
-    bindToolbar(load)
+  const r = await api(`/api/tracks/${id}/similar?${similarQuery()}`)
+  const t = r.reference
+  trackById.set(t.id, t)
+  view.innerHTML = `
+    <a class="back label" href="#/dig">${icon('arrowL')} Dig</a>
+    <div class="panel">
+      <div class="ref-head">
+        <button class="icon-btn" data-act="play" data-list="${(lists.set('ref' + t.id, [t]), 'ref' + t.id)}" data-i="0">${icon('play')}</button>
+        ${cover(t, 'lg')}
+        <div><div class="title">${esc(t.title)} <span class="artist">· ${esc(t.artist || '')}</span></div>
+          <div class="sub">${t.duration ? fmtTime(t.duration) : ''}${t.bpm ? `<span>${Math.round(t.bpm)} BPM</span>` : ''}${t.camelot ? `<span class="keych">${t.camelot}</span>` : ''}<span class="label">${t.source === 'local' ? 'Your library' : sourceName(t.source)}</span></div></div>
+        <span class="spacer"></span><span class="label">Reference</span>
+      </div>
+      <div class="tabs"><button class="active">Similar tracks <span class="count" id="dig-count">${r.results.length}</span></button></div>
+      <div id="grow" class="note" hidden></div>
+      ${digToolbar()}
+      <div id="dig-list"></div>
+    </div>`
+  const show = (results) => {
+    $('#dig-count').textContent = results.length
+    $('#dig-list').innerHTML = trackList(results, { ranked: true, empty: 'Your catalog needs more tracks to compare against – it is growing in the background, or <a class="accent" href="#/collection">add music →</a>' })
+    player.render()
   }
-  await load()
+  const refresh = async () => show((await api(`/api/tracks/${id}/similar?${similarQuery()}`)).results)
+  show(r.results)
+  bindToolbar(refresh)
+
+  // med zajemom v ozadju se rezultati sproti osvežujejo
+  let wasRunning = false
+  poll(async () => {
+    const running = (await api('/api/jobs')).filter((j) => j.kind !== 'analysis' && (j.status === 'running' || j.status === 'queued'))
+    const grow = $('#grow')
+    if (!grow) return false
+    if (running.length) {
+      wasRunning = true
+      const added = running.reduce((n, j) => n + j.added, 0)
+      grow.hidden = false
+      grow.innerHTML = `<span class="dot-live" style="display:inline-block;margin-right:8px"></span>Growing the catalog around this artist and related ones · <b>${fmtNum(added)}</b> tracks added · results update automatically`
+      if (!document.querySelector('.track.playing')) await refresh()
+      refreshCount()
+    } else if (wasRunning) {
+      wasRunning = false
+      grow.innerHTML = 'Catalog updated.'
+      await refresh()
+      refreshCount()
+    }
+    return true
+  }, 5000)
 }
 
 async function analysisPage(id) {
