@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS analyses (
   error TEXT,
   created REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
 CREATE TABLE IF NOT EXISTS playlists (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
@@ -49,7 +53,7 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 );
 '''
 
-TRACK_COLS = 'id, source, source_id, title, artist, album, cover, link, path, duration, bpm, key, camelot, liked, saved, added_at'
+TRACK_COLS = 'id, source, source_id, title, artist, album, cover, link, path, duration, bpm, key, camelot, liked, saved, owned, added_at'
 
 
 def _norm_name(s):
@@ -65,6 +69,9 @@ class Library:
         self._local = threading.local()
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.executescript(SCHEMA)
+        cols = {r[1] for r in self.db.execute('PRAGMA table_info(tracks)')}
+        if 'owned' not in cols:  # katalogi iz prejšnje različice
+            self.db.execute('ALTER TABLE tracks ADD COLUMN owned INTEGER NOT NULL DEFAULT 0')
         # analize, ki so bile prekinjene ob zaustavitvi strežnika
         self.db.execute("UPDATE analyses SET status='error', error='Prekinjeno' WHERE status IN ('queued', 'running')")
         self.db.commit()
@@ -169,9 +176,10 @@ class Library:
         vals = [meta.get(c) for c in cols]
         with self.lock:
             cur = self.db.execute(
-                f'INSERT INTO tracks (source, source_id, {", ".join(cols)}, vec, added_at) VALUES (?, ?, {", ".join("?" * len(cols))}, ?, ?) '
-                f'ON CONFLICT(source, source_id) DO UPDATE SET {", ".join(f"{c}=excluded.{c}" for c in cols)}, vec=excluded.vec RETURNING id',
-                [source, str(source_id), *vals, vec.tobytes(), time.time()],
+                f'INSERT INTO tracks (source, source_id, {", ".join(cols)}, vec, owned, added_at) VALUES (?, ?, {", ".join("?" * len(cols))}, ?, ?, ?) '
+                f'ON CONFLICT(source, source_id) DO UPDATE SET {", ".join(f"{c}=excluded.{c}" for c in cols)}, vec=excluded.vec, '
+                'owned=MAX(owned, excluded.owned) RETURNING id',
+                [source, str(source_id), *vals, vec.tobytes(), int(bool(meta.get('owned'))), time.time()],
             )
             tid = cur.fetchone()[0]
             self.db.commit()
@@ -201,7 +209,7 @@ class Library:
         rows = self.db.execute(f'SELECT {TRACK_COLS} FROM tracks WHERE id IN ({",".join("?" * len(ids))})', list(ids)).fetchall()
         return {r['id']: dict(r) for r in rows}
 
-    def find_tracks(self, q='', liked=False, saved=False, limit=50, offset=0):
+    def find_tracks(self, q='', liked=False, saved=False, limit=50, offset=0, owned=False):
         sql, args = f'SELECT {TRACK_COLS} FROM tracks WHERE 1=1', []
         for word in (q or '').split():
             sql += ' AND (title LIKE ? OR artist LIKE ? OR album LIKE ?)'
@@ -210,6 +218,8 @@ class Library:
             sql += ' AND liked=1'
         if saved:
             sql += ' AND saved=1'
+        if owned:
+            sql += ' AND (owned=1 OR source=\'local\')'
         sql += ' ORDER BY added_at DESC LIMIT ? OFFSET ?'
         return [dict(r) for r in self.db.execute(sql, args + [limit, offset])]
 
@@ -224,6 +234,34 @@ class Library:
         rows = self.db.execute('SELECT source, COUNT(*) n FROM tracks GROUP BY source').fetchall()
         by = {r['source']: r['n'] for r in rows}
         return {'tracks': sum(by.values()), 'by_source': by}
+
+    def counts_owned(self):
+        return self.db.execute("SELECT COUNT(*) FROM tracks WHERE owned=1 OR source='local'").fetchone()[0]
+
+    # ---------- nastavitve in povezane zbirke ----------
+
+    def setting(self, key, default=None):
+        row = self.db.execute('SELECT value FROM settings WHERE key=?', (key,)).fetchone()
+        return json.loads(row[0]) if row else default
+
+    def set_setting(self, key, value):
+        with self.lock:
+            self.db.execute('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+                            (key, json.dumps(value)))
+            self.db.commit()
+
+    def connections(self):
+        return self.setting('connections', {})
+
+    def set_connection(self, platform, handle):
+        conns = self.connections()
+        conns[platform] = {'handle': handle, 'synced': time.time()}
+        self.set_setting('connections', conns)
+
+    def remove_connection(self, platform):
+        conns = self.connections()
+        conns.pop(platform, None)
+        self.set_setting('connections', conns)
 
     # ---------- analize (naloženi komadi in seti) ----------
 

@@ -114,7 +114,8 @@ function trackRow(t, listId, i, opts = {}) {
         ${t.match != null ? `<span class="match">${t.match}% match</span>` : ''}
         ${t.bpm ? `<span>${Math.round(t.bpm)} BPM</span>` : ''}
         ${t.camelot ? `<span class="keych" title="${esc(t.key)}">${esc(t.camelot)}</span>` : ''}
-        ${t.local ? '<span class="tag" style="color:var(--green)">IN YOUR LIBRARY</span>' : ''}
+        ${t.local || t.owned ? '<span class="tag" style="color:var(--green)">IN YOUR COLLECTION</span>' : ''}
+        ${PLATFORMS[t.source] ? `<span class="src" title="${sourceName(t.source)}">${platformIcon(t.source, 14)}${sourceName(t.source)}</span>` : ''}
       </div>
       ${facets}
     </div>
@@ -242,7 +243,12 @@ const player = (() => {
   const el = $('#player')
 
   const cur = () => queue[idx]
-  const srcOf = (t) => t.src || `/api/tracks/${t.id}/audio`
+  const srcOf = (t) => {
+    if (t.src) return t.src
+    // pretočni komadi (SoundCloud, YouTube …) se ne dajo previjati, zato začetek pošljemo strežniku
+    const start = t.streamed && startAt && t.duration > 90 ? Math.round(t.duration * 0.25) : 0
+    return `/api/tracks/${t.id}/audio${start ? `?start=${start}` : ''}`
+  }
 
   function play(list, i) {
     queue = list
@@ -256,7 +262,7 @@ const player = (() => {
   audio.addEventListener('loadedmetadata', () => {
     const t = cur()
     if (t?.startTime != null) audio.currentTime = t.startTime
-    else if (startAt && audio.duration > 90) audio.currentTime = audio.duration * 0.25
+    else if (startAt && !t?.streamed && audio.duration > 90) audio.currentTime = audio.duration * 0.25
   })
   audio.addEventListener('ended', () => (cur()?.src ? render() : next()))
   audio.addEventListener('error', () => cur() && toast('This track has no playable audio'))
@@ -438,8 +444,9 @@ async function homePage() {
         <p class="lead">Drop a track or a whole DJ set. Sonar pings your crate and brings back the closest-sounding tracks – ranked by groove, bass, texture and mood.</p>
         <div class="actions">
           <button class="btn" data-act="upload">Drop a track or set ${icon('arrowR')}</button>
-          <a class="btn dark" href="#/collection">Connect collection</a>
+          <a class="btn dark" href="#/collection">Connect collection <span class="btn-icons">${['bandcamp', 'youtube', 'soundcloud', 'discogs'].map((k) => platformIcon(k, 22)).join('')}</span></a>
         </div>
+        ${linkForm()}
         <div class="stat-line"><span class="dot-live"></span>Search across <b>${fmtNum(stats.tracks)}</b> tracks</div>
       </div>
       ${demoCard}
@@ -447,6 +454,22 @@ async function homePage() {
     ${analyses.length ? `
       <div class="section-title"><h2>Recent digs</h2><a class="label" href="#/sets">All sets →</a></div>
       <div class="grid-cards">${analyses.slice(0, 6).map(analysisCard).join('')}</div>` : ''}`
+}
+
+function linkForm() {
+  return `<form class="link-form" onsubmit="event.preventDefault(); window.analyzeLink(this.url.value)">
+    <input type="text" name="url" placeholder="…or paste a SoundCloud, Mixcloud, YouTube or Bandcamp link to a set or track" required>
+    <button class="chip-btn primary">Dig</button>
+  </form>`
+}
+
+window.analyzeLink = async (url) => {
+  try {
+    const a = await api('/api/analyses/link', { json: { url: url.trim() } })
+    location.hash = `#/a/${a.id}`
+  } catch (err) {
+    toast(err.message)
+  }
 }
 
 function analysisCard(a, extra = '') {
@@ -530,6 +553,7 @@ async function analysisPage(id) {
     poll(async () => {
       const b = await api(`/api/analyses/${id}`)
       $('#an-prog') && ($('#an-prog').style.width = `${Math.max(3, b.progress * 100)}%`)
+      $('#an-msg') && !b.duration && b.status === 'running' && ($('#an-msg').textContent = 'Downloading from the link…')
       $('#an-msg') && b.duration && ($('#an-msg').textContent = b.duration > 720
         ? `DJ set, ${fmtTime(b.duration)} – cutting it into passages…` : 'Single track – fingerprinting…')
       if (b.status === 'queued' || b.status === 'running') return true
@@ -584,6 +608,7 @@ async function setsPage() {
   const all = await api('/api/analyses')
   view.innerHTML = `
     <div class="dropzone" data-act="upload"><b>Drop a DJ set or a track</b>Anything longer than 12 minutes is treated as a set and cut into passages</div>
+    ${linkForm()}
     <div class="section-title"><h2>Sets</h2></div>
     <div class="grid-cards">${all.filter((a) => a.kind !== 'track').map(analysisCard).join('') || '<div class="muted">No sets yet.</div>'}</div>
     <div class="section-title"><h2>Uploaded tracks</h2></div>
@@ -750,42 +775,99 @@ async function setPage(a) {
 
 // ----- Collection -----
 
+const PLATFORMS = {
+  bandcamp: { name: 'Bandcamp', color: '#1da0c3', icon: '<path d="M2 18L8.5 6H22l-6.5 12z"/>', hint: 'Your Bandcamp username (bandcamp.com/<b>username</b>) – everything you bought', ph: 'username' },
+  soundcloud: { name: 'SoundCloud', color: '#ff5500', icon: '<path d="M3 15v3M6 12v6M9 10v8M12 8v10M15 7c4 0 6 3 6 6a5 5 0 0 1-5 5h-1z"/>', hint: 'Username or link – your likes, or any profile / playlist link', ph: 'username or link' },
+  youtube: { name: 'YouTube', color: '#ff0033', icon: '<rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l5 3-5 3z" fill="#151210" stroke="none"/>', hint: 'A public playlist link (or a channel)', ph: 'playlist link' },
+  discogs: { name: 'Discogs', color: '#f2ede8', icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" fill="#151210" stroke="none"/><circle cx="12" cy="12" r="1.5"/>', hint: 'Your Discogs username – records in your collection, via their YouTube clips', ph: 'username', token: true },
+  mixcloud: { name: 'Mixcloud', color: '#5000ff', icon: '<path d="M7 18a4 4 0 0 1 0-8 6 6 0 0 1 11 2 3 3 0 0 1 0 6z"/>', hint: 'Username – tracks from your favourites (sets go on the Sets page)', ph: 'username' },
+}
+const sourceName = (k) => PLATFORMS[k]?.name || (k === 'deezer' ? 'Deezer' : k === 'local' ? 'local' : k)
+const platformIcon = (k, size = 22) => PLATFORMS[k]
+  ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${PLATFORMS[k].color}" stroke="${PLATFORMS[k].color}" stroke-width="1.5" stroke-linejoin="round">${PLATFORMS[k].icon}</svg>` : ''
+
+function connectTile(c) {
+  const p = PLATFORMS[c.platform]
+  return `<form class="connect-tile ${c.handle ? 'connected' : ''}" data-platform="${c.platform}">
+    <div class="connect-head">${platformIcon(c.platform, 26)}<b>${p.name}</b>
+      ${c.handle ? `<span class="label" style="color:var(--green);margin-left:auto">● Connected</span>` : ''}</div>
+    <p class="hint" style="margin:6px 0 10px">${p.hint}</p>
+    <input type="text" name="handle" value="${esc(c.handle || '')}" placeholder="${p.ph}" required>
+    ${p.token ? '<input type="text" name="token" placeholder="Personal token (only for a private collection)" style="margin-top:8px">' : ''}
+    <div class="form-row" style="margin-top:10px">
+      <button class="chip-btn primary">${c.handle ? 'Sync' : 'Connect'}</button>
+      ${c.handle ? `<button type="button" class="chip-btn" data-disconnect="${c.platform}">Disconnect</button>
+        <span class="hint" style="margin:0">synced ${new Date(c.synced * 1000).toLocaleDateString()}</span>` : ''}
+    </div>
+  </form>`
+}
+
 async function collectionPage() {
   const stats = await api('/api/stats')
-  let tab = store.get('collTab', 'liked')
+  let tab = store.get('collTab', 'owned')
+  const [conns, settings] = await Promise.all([api('/api/connections'), api('/api/settings')])
   view.innerHTML = `
     <div class="section-title" style="margin-top:0"><h2>Collection</h2>
-      <span class="label">${fmtNum(stats.tracks)} tracks · ${fmtNum(stats.by_source.local || 0)} yours · ${fmtNum(stats.by_source.deezer || 0)} Deezer previews</span></div>
-    <div class="two-col">
+      <span class="label">${[`${fmtNum(stats.tracks)} tracks`, `${fmtNum(stats.owned || 0)} yours`,
+        ...Object.entries(stats.by_source).filter(([k]) => k !== 'local').map(([k, n]) => `${fmtNum(n)} ${sourceName(k)}`)].join(' · ')}</span></div>
+
+    <div class="card" id="connect">
+      <span class="label">Connect collection</span>
+      <h3 style="margin:10px 0 4px">Bring in what you already own, like and follow</h3>
+      <p class="muted" style="margin:0">Sonar reads your public collection, fingerprints every track and marks matches as <span style="color:var(--green)">IN YOUR COLLECTION</span>. Press Sync any time to pick up new ones.</p>
+      <div class="connect-grid">${conns.map(connectTile).join('')}</div>
+    </div>
+
+    <div class="two-col" style="margin-top:24px">
       <form class="card" id="f-folder">
         <span class="label">Your music</span>
         <h3 style="margin:10px 0 4px">Add a folder from this computer</h3>
         <p class="muted" style="margin:0">Every audio file in it (and sub-folders) gets fingerprinted. Files never leave your computer.</p>
         <div class="form-row"><input type="text" name="path" placeholder="/Users/you/Music/DJ" required><button class="chip-btn primary">Import</button></div>
-        <p class="hint">Tip: point it at your Rekordbox / Serato / Traktor music folder. Matches from your library are marked <span style="color:var(--green)">IN YOUR LIBRARY</span>.</p>
+        <p class="hint">Tip: point it at your Rekordbox / Serato / Traktor music folder.</p>
       </form>
-      <form class="card" id="f-deezer">
-        <span class="label">Grow the catalog</span>
-        <h3 style="margin:10px 0 4px">Discover through Deezer previews</h3>
-        <p class="muted" style="margin:0">Starts from artists you like and follows related artists. One per line:</p>
-        <textarea name="seeds" rows="4" style="margin-top:12px" placeholder="Octave&#10;label:Innervisions&#10;q:minimal house&#10;https://www.deezer.com/playlist/1234"></textarea>
+      <form class="card" id="f-sources">
+        <span class="label">Discover</span>
+        <h3 style="margin:10px 0 4px">Grow the catalog from anywhere</h3>
+        <p class="muted" style="margin:0">Artists, searches or links – one per line. Paste a SoundCloud, YouTube, Bandcamp, Mixcloud, Beatport, Audiomack or Deezer link: a track, playlist, profile, label or album.</p>
+        <textarea name="lines" rows="4" style="margin-top:12px" placeholder="Octave&#10;https://soundcloud.com/rinsefm/sets/...&#10;https://perlon.bandcamp.com&#10;label:Innervisions&#10;q:minimal house"></textarea>
+        <div class="form-row">
+          <label>Search names on</label>
+          <select name="search_on" style="width:auto"><option value="deezer">Deezer</option><option value="soundcloud">SoundCloud</option><option value="youtube">YouTube</option></select>
+          <label><input type="checkbox" name="related" checked> Related artists</label>
+        </div>
         <div class="form-row">
           <label>Max new tracks</label><input type="number" name="max" value="1000" min="10" max="100000" style="width:110px">
           <label>Per artist</label><input type="number" name="per" value="10" min="1" max="100" style="width:80px">
-          <label><input type="checkbox" name="related" checked> Related artists</label>
           <button class="chip-btn primary">Start</button>
         </div>
-        <p class="hint">Formats: artist name · <code>label:Name</code> · <code>q:any search</code> · Deezer artist / album / playlist link. ~1 s per track per CPU core.</p>
+        <p class="hint">Deezer extras: <code>label:Name</code> · <code>q:any search</code>. Related artists works for Deezer names. Mixes longer than 15 min are skipped – drop those on the Sets page instead.</p>
       </form>
     </div>
     <div class="jobs" id="jobs"></div>
     <div class="panel" style="margin-top:36px">
       <div class="tabs">
-        <button data-tab="liked">Liked</button><button data-tab="saved">Saved</button><button data-tab="all">All tracks</button>
+        <button data-tab="owned">In your collection</button><button data-tab="liked">Liked</button><button data-tab="saved">Saved</button><button data-tab="all">All tracks</button>
       </div>
       <div id="coll-search" class="toolbar" hidden><input type="search" placeholder="Filter by artist or title"></div>
       <div id="coll-body"></div>
     </div>`
+
+  view.querySelectorAll('form[data-platform]').forEach((f) => f.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const platform = f.dataset.platform
+    try {
+      if (f.token?.value) await api('/api/settings', { json: { discogs_token: f.token.value } })
+      await api(`/api/connections/${platform}`, { json: { handle: f.handle.value.trim() } })
+      toast(`Syncing ${PLATFORMS[platform].name}…`)
+      watchJobs()
+    } catch (err) { toast(err.message) }
+  }))
+  view.querySelectorAll('[data-disconnect]').forEach((b) => b.addEventListener('click', async () => {
+    await api(`/api/connections/${b.dataset.disconnect}`, { method: 'DELETE' })
+    route()
+  }))
+  if (settings.discogs_token) view.querySelector('form[data-platform=discogs] [name=token]')?.setAttribute('placeholder', 'Token saved ✓')
 
   $('#f-folder').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -795,15 +877,15 @@ async function collectionPage() {
       watchJobs()
     } catch (err) { toast(err.message) }
   })
-  $('#f-deezer').addEventListener('submit', async (e) => {
+  $('#f-sources').addEventListener('submit', async (e) => {
     e.preventDefault()
     const f = e.target
     try {
-      await api('/api/import/deezer', { json: {
-        seeds: f.seeds.value.split('\n').map((s) => s.trim()).filter(Boolean),
+      await api('/api/import/sources', { json: {
+        lines: f.lines.value.split('\n').map((s) => s.trim()).filter(Boolean), search_on: f.search_on.value,
         max_tracks: Number(f.max.value), per_artist: Number(f.per.value), related: f.related.checked,
       } })
-      toast('Crawl started')
+      toast('Started')
       watchJobs()
     } catch (err) { toast(err.message) }
   })
@@ -814,7 +896,11 @@ async function collectionPage() {
     $('#coll-search').hidden = tab !== 'all'
     const params = tab === 'all' ? `q=${encodeURIComponent(q)}&limit=200` : `${tab}=true&limit=500`
     const tracks = await api(`/api/tracks?${params}`)
-    $('#coll-body').innerHTML = trackList(tracks, { empty: tab === 'all' ? 'No tracks yet – import a folder or start a Deezer crawl above.' : `Nothing ${tab} yet. Press ♥ or the bookmark on any track.` })
+    const empty = {
+      all: 'No tracks yet – connect a collection, import a folder or discover above.',
+      owned: 'Connect a collection or import a folder above.',
+    }[tab] || `Nothing ${tab} yet. Press ♥ or the bookmark on any track.`
+    $('#coll-body').innerHTML = trackList(tracks, { empty })
   }
   view.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; store.set('collTab', tab); showTab() }))
   let timer
@@ -831,7 +917,8 @@ async function collectionPage() {
       if (!el) return false
       el.innerHTML = jobs.filter((j) => j.kind !== 'analysis').map((j) => `
         <div class="card job">
-          <div><b>${esc(j.label)}</b><div class="muted" style="font-size:14px">${j.status === 'error' ? `<span class="accent">${esc(j.message)}</span>` : `${j.status} · ${fmtNum(j.added)} added${j.failed ? ` · ${j.failed} failed` : ''} · ${esc(j.message)}`}</div></div>
+          <div><b>${esc(j.label)}</b><div class="muted" style="font-size:14px">${j.status === 'error' ? `<span class="accent">${esc(j.message)}</span>` : `${j.status} · ${fmtNum(j.added)} added${j.failed ? ` · ${j.failed} failed` : ''} · ${esc(j.message)}`}</div>
+            ${j.errors?.length ? `<details class="hint"><summary>${j.errors.length} problem${j.errors.length > 1 ? 's' : ''}</summary>${j.errors.slice(-10).map((x) => `<div>${esc(x)}</div>`).join('')}</details>` : ''}</div>
           <div class="progress"><i style="width:${j.total ? Math.min(100, (j.done / j.total) * 100) : j.status === 'done' ? 100 : 3}%"></i></div>
           ${j.status === 'running' || j.status === 'queued' ? `<button class="chip-btn" data-cancel="${j.id}">Stop</button>` : '<span></span>'}
         </div>`).join('')

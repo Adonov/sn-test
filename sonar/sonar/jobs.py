@@ -1,10 +1,11 @@
-"""Opravila v ozadju: analiza naloženih datotek, uvoz lokalne mape, zajem z Deezerja.
+"""Opravila v ozadju: analiza datotek in povezav, uvoz lokalne mape, zajem s spletnih platform.
 
 Računanje prstnih odtisov teče v več procesih hkrati (vsa jedra razen enega).
 """
 import itertools
 import multiprocessing
 import os
+import shutil
 import tempfile
 import threading
 import time
@@ -16,6 +17,7 @@ import numpy as np
 import requests
 
 from .audio import AUDIO_EXTS, SR, load, probe
+from . import collections, links
 from .deezer import Deezer, parse_seed, track_meta
 from .features import analyze_file, clip_features, combine
 from .sets import passages, window_starts
@@ -66,6 +68,108 @@ def _preview_worker(args):
         return track_id, None, str(e)
 
 
+def _link_worker(url):
+    tmp = tempfile.mkdtemp(prefix='sonar-')
+    try:
+        path, m, _, _ = links.download(url, tmp, max_seconds=links.MAX_TRACK_SECONDS)
+        return analyze_file(path), m, None
+    except Exception as e:  # noqa: BLE001
+        return None, None, str(e)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+PLATFORMS = {'bandcamp': 'Bandcamp', 'soundcloud': 'SoundCloud', 'youtube': 'YouTube', 'discogs': 'Discogs', 'mixcloud': 'Mixcloud'}
+META_KEYS = ('title', 'artist', 'album', 'cover', 'link', 'duration')
+
+
+def connection_url(platform, handle):
+    """Uporabniško ime ali povezava → stran z zbirko."""
+    handle = handle.strip()
+    if handle.startswith('http'):
+        return handle
+    handle = handle.lstrip('@')
+    return {
+        'soundcloud': f'https://soundcloud.com/{handle}/likes',
+        'mixcloud': f'https://www.mixcloud.com/{handle}/favorites/',
+        'youtube': f'https://www.youtube.com/@{handle}/videos',
+    }[platform]
+
+
+def classify(line, search_on='deezer', n=10):
+    """Vrstica iz polja "Discover" → (platforma, vrsta, vrednost)."""
+    line = line.strip()
+    if 'deezer.com' in line:
+        return ('deezer', *parse_seed(line))
+    if links.is_link(line):
+        return ('link', 'url', line)
+    kind, value = parse_seed(line)
+    if kind in ('label', 'playlist', 'album', 'track') or search_on == 'deezer':
+        return ('deezer', kind, value)
+    prefix = {'youtube': 'ytsearch', 'soundcloud': 'scsearch'}[search_on]
+    return ('link', 'url', f'{prefix}{n}:{value}')
+
+
+class Harvest:
+    """Pošilja komade v analizo (več procesov hkrati) in jih sproti shranjuje v katalog."""
+
+    def __init__(self, lib, job, max_tracks, owned=False):
+        self.lib, self.job, self.max, self.owned = lib, job, max_tracks, owned
+        self.futures, self.keys = {}, set()
+        job['total'] = max_tracks
+
+    def full(self):
+        return self.job['cancel'] or self.job['added'] + len(self.futures) >= self.max
+
+    def _submit(self, key, fn, arg, meta):
+        if self.full() or key in self.keys or self.lib.has(*key):
+            return
+        self.keys.add(key)
+        self.futures[pool().submit(fn, arg)] = (key, meta, fn is _link_worker)
+        while len(self.futures) > 48:  # ne prehitevaj procesov preveč
+            time.sleep(0.2)
+            self.drain()
+
+    def preview(self, source, sid, url, meta):
+        if url:
+            self._submit((source, str(sid)), _preview_worker, (sid, url), meta)
+
+    def link(self, entry, extra=None):
+        if (entry.get('duration') or 0) > links.MAX_TRACK_SECONDS:
+            return
+        meta = {**{k: entry.get(k) for k in META_KEYS}, **{k: v for k, v in (extra or {}).items() if v}}
+        self._submit((entry['source'], str(entry['id'])), _link_worker, entry['url'], meta)
+
+    def drain(self, block=False):
+        for fut in [f for f in self.futures if block or f.done()]:
+            key, meta, is_link = self.futures.pop(fut)
+            self.job['done'] += 1
+            try:
+                if is_link:  # (rezultat, meta s platforme, napaka)
+                    res, found, err = fut.result()
+                    meta = {**meta, **{k: v for k, v in (found or {}).items() if v and not meta.get(k)}}
+                else:  # (id, rezultat, napaka)
+                    _, res, err = fut.result()
+            except Exception as e:  # noqa: BLE001
+                res, err = None, str(e)
+            if err or res is None:
+                self.job['failed'] += 1
+                if len(self.job['errors']) < 200:
+                    self.job['errors'].append(f'{meta.get("title") or key[1]}: {err}')
+                continue
+            self.lib.add_track(*key, res['vec'], bpm=res['bpm'], key=res['key'], camelot=res['camelot'], owned=self.owned,
+                               **{k: meta.get(k) for k in META_KEYS})
+            self.job['added'] += 1
+
+    def finish(self):
+        if self.job['cancel']:
+            for f in self.futures:
+                f.cancel()
+            return
+        self.drain(block=True)
+        self.job['total'] = self.job['done']
+
+
 # ---------- register opravil ----------
 
 class Jobs:
@@ -81,7 +185,7 @@ class Jobs:
 
     def _start(self, executor, kind, label, fn, *args):
         job = {'id': next(self._ids), 'kind': kind, 'label': label, 'status': 'queued', 'done': 0, 'total': 0,
-               'added': 0, 'failed': 0, 'message': '', 'started': time.time(), 'cancel': False}
+               'added': 0, 'failed': 0, 'message': '', 'errors': [], 'started': time.time(), 'cancel': False}
         self.jobs[job['id']] = job
 
         def run():
@@ -107,12 +211,22 @@ class Jobs:
     def import_folder(self, folder):
         return self._start(self._imports, 'folder', f'Folder {folder}', self._import_folder, Path(folder).expanduser())
 
+    def import_sources(self, lines, search_on='deezer', max_tracks=1000, per_artist=10, related=True):
+        label = ', '.join(lines)[:90]
+        return self._start(self._imports, 'import', label, self._import_sources, lines, search_on, max_tracks, per_artist, related)
+
     def crawl_deezer(self, seeds, max_tracks=1000, per_artist=10, related=True):
-        label = 'Deezer: ' + ', '.join(seeds)[:80]
-        return self._start(self._imports, 'deezer', label, self._crawl_deezer, seeds, max_tracks, per_artist, related)
+        return self.import_sources(seeds, 'deezer', max_tracks, per_artist, related)
+
+    def connect(self, platform, handle, max_tracks=2000):
+        label = f'{PLATFORMS[platform]}: {handle}'
+        return self._start(self._imports, 'connect', label, self._connect, platform, handle, max_tracks)
 
     def analyze(self, aid):
         return self._start(self._analyses, 'analysis', f'Analysis #{aid}', self._analyze, aid)
+
+    def analyze_link(self, aid, url):
+        return self._start(self._analyses, 'analysis', f'Link {url}', self._analyze_link, aid, url)
 
     # ---------- uvoz mape ----------
 
@@ -122,7 +236,7 @@ class Jobs:
         files = [p for p in folder.rglob('*') if p.suffix.lower() in AUDIO_EXTS and not p.name.startswith('.')]
         todo = [str(p) for p in files if not self.lib.has('local', str(p.resolve()))]
         job['total'] = len(todo)
-        job['message'] = f'{len(files) - len(todo)} že v katalogu'
+        job['message'] = f'{len(files) - len(todo)} already in catalog'
         futures = [pool().submit(_track_worker, p) for p in todo]
         for fut in as_completed(futures):
             if job['cancel']:
@@ -142,84 +256,125 @@ class Jobs:
             )
             job['added'] += 1
 
-    # ---------- zajem z Deezerja ----------
+    # ---------- spletni viri: Deezer, SoundCloud, YouTube, Bandcamp, Mixcloud … ----------
 
-    def _crawl_deezer(self, job, seeds, max_tracks, per_artist, related):
+    def _import_sources(self, job, lines, search_on, max_tracks, per_artist, related):
+        h = Harvest(self.lib, job, max_tracks)
         dz = Deezer()
-        artists, seen_artists, pending = [], set(), {}
-        tracks = []  # (deezer track json) v vrstnem redu odkritja
+        artists, seen_artists = [], set()
 
         def queue_artist(a):
-            if a and a['id'] not in seen_artists:
+            if a and a.get('id') and a['id'] not in seen_artists:
                 seen_artists.add(a['id'])
                 artists.append(a)
 
-        for seed in seeds:
-            kind, value = parse_seed(seed)
-            if kind == 'artist':
-                queue_artist(dz.get(f'/artist/{value}') if value.isdigit() else dz.find_artist(value))
-            elif kind in ('playlist', 'album'):
-                tracks += list(dz.pages(f'/{kind}/{value}/tracks', limit=max_tracks))
-            elif kind == 'track':
-                tracks.append(dz.get(f'/track/{value}'))
-            elif kind == 'label':
-                tracks += list(dz.pages('/search', limit=max_tracks, q=f'label:"{value}"'))
-            else:
-                tracks += list(dz.pages('/search', limit=max_tracks, q=value))
-        for t in tracks:
-            queue_artist(t.get('artist'))
+        def deezer_tracks(tracks):
+            for t in tracks:
+                h.preview('deezer', t['id'], t.get('preview') if t.get('readable', True) else None, track_meta(t))
+                if related:
+                    queue_artist(t.get('artist'))
 
-        job['total'] = max_tracks
-        futures = {}
+        for line in lines:
+            if h.full():
+                break
+            platform, kind, value = classify(line, search_on, per_artist)
+            job['message'] = line[:80]
+            try:
+                if platform == 'link':
+                    for e in links.list_entries(value, limit=max_tracks):
+                        h.link(e)
+                elif kind == 'artist':
+                    queue_artist(dz.get(f'/artist/{value}') if value.isdigit() else dz.find_artist(value))
+                elif kind in ('playlist', 'album'):
+                    deezer_tracks(dz.pages(f'/{kind}/{value}/tracks', limit=max_tracks))
+                elif kind == 'track':
+                    deezer_tracks([dz.get(f'/track/{value}')])
+                elif kind == 'label':
+                    deezer_tracks(dz.pages('/search', limit=max_tracks, q=f'label:"{value}"'))
+                else:
+                    deezer_tracks(dz.pages('/search', limit=max_tracks, q=value))
+            except Exception as e:  # noqa: BLE001 – ena slaba vrstica ne ustavi ostalih
+                job['errors'].append(f'{line}: {e}')
+            h.drain()
 
-        def submit(t):
-            if len(pending) + job['added'] + job['failed'] >= max_tracks or not t.get('preview') or not t.get('readable', True):
-                return
-            if t['id'] in pending or self.lib.has('deezer', t['id']):
-                return
-            pending[t['id']] = t
-            futures[pool().submit(_preview_worker, (t['id'], t['preview']))] = t['id']
-
-        def drain(block=False):
-            for fut in [f for f in futures if block or f.done()]:
-                tid, res, err = fut.result()
-                del futures[fut]
-                t = pending.pop(tid)
-                job['done'] += 1
-                if err:
-                    job['failed'] += 1
-                    continue
-                self.lib.add_track('deezer', tid, res['vec'], bpm=res['bpm'], key=res['key'], camelot=res['camelot'], **track_meta(t))
-                job['added'] += 1
-
-        for t in tracks:
-            submit(t)
+        # Deezer izvajalci: najbolj poslušani komadi, nato sorodni izvajalci
         i = 0
-        while i < len(artists) and job['added'] + len(pending) < max_tracks and not job['cancel']:
+        while i < len(artists) and not h.full():
             a = artists[i]
             i += 1
-            job['message'] = f'Izvajalec: {a.get("name")} ({i}/{len(artists)})'
+            job['message'] = f'{a.get("name")} ({i}/{len(artists)})'
             try:
                 for t in dz.artist_top(a['id'], per_artist):
-                    submit(t)
+                    h.preview('deezer', t['id'], t.get('preview'), track_meta(t))
                 if related:
                     for r in dz.related(a['id']):
                         queue_artist(r)
             except Exception as e:  # noqa: BLE001
-                job['message'] = f'{a.get("name")}: {e}'
-            drain()
-            while len(futures) > 64:  # ne prehitevaj procesov preveč
-                time.sleep(0.2)
-                drain()
-        if job['cancel']:
-            for f in futures:
-                f.cancel()
-            return
-        drain(block=True)
-        job['total'] = job['done']
-        job['message'] = f'Končano, {len(artists)} izvajalcev'
+                job['errors'].append(f'{a.get("name")}: {e}')
+            h.drain()
+        h.finish()
+        job['message'] = f'finished · {len(artists)} artists' if artists else 'finished'
 
-    # ---------- analiza naložene datoteke ----------
+    # ---------- povezane zbirke ----------
+
+    def _connect(self, job, platform, handle, max_tracks):
+        h = Harvest(self.lib, job, max_tracks, owned=True)
+        self.lib.set_connection(platform, handle)
+        if platform == 'bandcamp':
+            job['message'] = 'Reading your Bandcamp collection…'
+            for item in collections.bandcamp_collection(handle, limit=max_tracks):
+                if h.full():
+                    break
+                job['message'] = f'{item["artist"]} – {item["title"]}'
+                try:
+                    for e in links.list_entries(item['url'], limit=100):
+                        h.link(e, {'cover': item['cover'], 'artist': item['artist']})
+                except Exception as e:  # noqa: BLE001
+                    job['errors'].append(f'{item["url"]}: {e}')
+                h.drain()
+        elif platform in ('soundcloud', 'youtube', 'mixcloud'):
+            for e in links.list_entries(connection_url(platform, handle), limit=max_tracks):
+                h.link(e)
+        elif platform == 'discogs':
+            dc = collections.Discogs(token=self.lib.setting('discogs_token'))
+            dz = Deezer()
+            releases = dc.releases(handle, limit=max_tracks)
+            for n, r in enumerate(releases, 1):
+                if h.full():
+                    break
+                job['message'] = f'{r["artist"]} – {r["title"]} ({n}/{len(releases)})'
+                try:
+                    videos = dc.videos(r['id'])
+                    for url in videos:
+                        h.link({'source': 'youtube', 'id': url.rsplit('=', 1)[-1], 'url': url}, {'album': r['title'], 'cover': r['cover']})
+                    if not videos:  # ni posnetkov → poskusi isti album na Deezerju
+                        hits = dz.get('/search/album', q=f'{r["artist"]} {r["title"]}', limit=1).get('data', [])
+                        if hits:
+                            for t in dz.pages(f'/album/{hits[0]["id"]}/tracks', limit=30):
+                                t.setdefault('album', {'title': r['title'], 'cover_medium': r['cover']})
+                                h.preview('deezer', t['id'], t.get('preview'), track_meta(t))
+                except Exception as e:  # noqa: BLE001
+                    job['errors'].append(f'{r["title"]}: {e}')
+                h.drain()
+        else:
+            raise ValueError(f'Neznana platforma: {platform}')
+        h.finish()
+        job['message'] = 'finished'
+
+    # ---------- analiza naložene datoteke ali povezave ----------
+
+    def _analyze_link(self, job, aid, url):
+        job['message'] = 'Downloading…'
+        self.lib.update_analysis(aid, status='running')
+        try:
+            path, m, _, _ = links.download(url, self.lib.home / 'uploads')
+        except Exception as e:
+            self.lib.update_analysis(aid, status='error', error=f'Prenos ni uspel: {e}')
+            raise
+        name = f'{m["title"]} – {m["artist"]}' if m['artist'] and m['title'] else (m['title'] or url)
+        self.lib.update_analysis(aid, path=str(path), name=name)
+        self._analyze(job, aid)
+
 
     def _analyze(self, job, aid):
         lib = self.lib
