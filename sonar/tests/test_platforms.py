@@ -200,3 +200,27 @@ def test_search_sets_by_name(client, monkeypatch):
     sets = client.get('/api/online/sets', params={'q': 'traumer'}).json()
     assert [(s['title'], s['source']) for s in sets] == [('Traumer DJ SET – Sunwaves', 'youtube'), ('Traumer @ HÖR', 'soundcloud')]
     assert sets[0]['cover'] == 'http://img/a.jpg' and sets[0]['duration'] == 11040
+
+
+def test_youtube_falls_back_to_other_clients(tmp_path, monkeypatch):
+    import yt_dlp
+    from sonar import links
+    tried = []
+
+    def fake_extract(self, url, download=False):
+        args = self.params.get('extractor_args')
+        tried.append(args)
+        if not args:
+            raise yt_dlp.utils.DownloadError('[youtube] x: The page needs to be reloaded.')
+        f = tmp_path / 'x.m4a'
+        f.write_bytes(b'audio')
+        return {'id': 'x', 'title': 'Set', 'extractor_key': 'Youtube', 'requested_downloads': [{'filepath': str(f)}]}
+
+    monkeypatch.setattr(yt_dlp.YoutubeDL, 'extract_info', fake_extract)
+    path, meta, source, sid = links.download('https://www.youtube.com/watch?v=x', tmp_path)
+    assert path.endswith('x.m4a') and source == 'youtube' and len(tried) == 2
+
+    monkeypatch.setattr(yt_dlp.YoutubeDL, 'extract_info', lambda self, url, download=False: (_ for _ in ()).throw(
+        yt_dlp.utils.DownloadError('[youtube] x: The page needs to be reloaded.')))
+    with pytest.raises(RuntimeError, match='YouTube blocked the download'):
+        links.download('https://www.youtube.com/watch?v=x', tmp_path)
