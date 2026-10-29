@@ -181,3 +181,22 @@ def test_online_search_and_dig(site, tmp_path, monkeypatch):
     similar = client.get(f'/api/tracks/{dug["id"]}/similar').json()['results']
     assert {t['title'] for t in similar} == {'Web 1', 'Web 2', 'Web 3'}
     assert client.get('/api/online/search', params={'q': 'traumer'}).json()[0]['id'] == dug['id']
+
+
+def test_search_sets_by_name(client, monkeypatch):
+    import yt_dlp
+
+    def fake_extract(self, url, download=False):
+        if url.startswith('ytsearch'):
+            assert url.endswith(':traumer dj set')
+            return {'entries': [
+                {'title': 'Traumer DJ SET – Sunwaves', 'channel': 'Traumer', 'duration': 11040,
+                 'url': 'https://www.youtube.com/watch?v=a', 'thumbnails': [{'url': 'http://img/a.jpg'}]},
+                {'title': 'Traumer – single track', 'channel': 'Traumer', 'duration': 380, 'url': 'https://www.youtube.com/watch?v=b'},
+            ]}
+        return {'entries': [{'title': 'Traumer @ HÖR', 'uploader': 'HÖR', 'duration': 3300, 'url': 'https://soundcloud.com/hor/traumer'}]}
+
+    monkeypatch.setattr(yt_dlp.YoutubeDL, 'extract_info', fake_extract)
+    sets = client.get('/api/online/sets', params={'q': 'traumer'}).json()
+    assert [(s['title'], s['source']) for s in sets] == [('Traumer DJ SET – Sunwaves', 'youtube'), ('Traumer @ HÖR', 'soundcloud')]
+    assert sets[0]['cover'] == 'http://img/a.jpg' and sets[0]['duration'] == 11040

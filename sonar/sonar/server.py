@@ -126,6 +126,13 @@ def create_app(lib=None):
                  'preview': t.get('preview'), 'artist_id': (t.get('artist') or {}).get('id'), 'source': 'deezer'}
                 for t in hits if t.get('readable', True)]
 
+    @app.get('/api/online/sets')
+    def online_sets(q: str):
+        """DJ seti z YouTuba in SoundClouda za iskalni niz (za analizo seta po imenu)."""
+        if not q.strip():
+            return []
+        return links.search_sets(q.strip())
+
     class OnlineDig(BaseModel):
         deezer_id: int
         grow: bool = True

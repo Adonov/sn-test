@@ -95,3 +95,39 @@ def stream(url):
     with yt_dlp.YoutubeDL({**BASE, 'format': 'bestaudio/best', 'noplaylist': True}) as ydl:
         info = ydl.extract_info(url, download=False)
     return info['url'], info.get('http_headers') or {}
+
+
+def _thumb(e):
+    thumbs = e.get('thumbnails') or []
+    return e.get('thumbnail') or (thumbs[-1].get('url') if thumbs else None)
+
+
+def search_sets(query, limit=12, min_seconds=MAX_TRACK_SECONDS):
+    """DJ seti in miksi za iskalni niz z YouTuba in SoundClouda (vzporedno), najdaljši najprej v vsakem viru."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def run(prefix, q, n):
+        try:
+            with yt_dlp.YoutubeDL({**BASE, 'extract_flat': 'in_playlist'}) as ydl:
+                info = ydl.extract_info(f'{prefix}{n}:{q}', download=False)
+        except yt_dlp.utils.DownloadError:
+            return []
+        out = []
+        for e in info.get('entries') or []:
+            if not e or (e.get('duration') and e['duration'] < min_seconds):
+                continue
+            out.append({
+                'title': e.get('title'),
+                'artist': e.get('channel') or e.get('uploader'),
+                'duration': e.get('duration'),
+                'cover': _thumb(e),
+                'url': e.get('webpage_url') or e.get('url'),
+                'source': 'youtube' if prefix == 'ytsearch' else 'soundcloud',
+            })
+        return out
+
+    with ThreadPoolExecutor(2) as ex:
+        yt = ex.submit(run, 'ytsearch', f'{query} dj set', limit * 2)
+        sc = ex.submit(run, 'scsearch', query, limit)
+        results = yt.result()[:limit] + sc.result()[:max(4, limit // 2)]
+    return [r for r in results if r['url']]
