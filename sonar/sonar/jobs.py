@@ -30,7 +30,7 @@ def pool():
     global _pool
     with _pool_lock:
         if _pool is None:
-            workers = int(os.environ.get('DIGDEEPER_WORKERS') or max(1, (os.cpu_count() or 2) - 1))
+            workers = int(os.environ.get('SONAR_WORKERS') or max(1, (os.cpu_count() or 2) - 1))
             _pool = ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context('spawn'))
         return _pool
 

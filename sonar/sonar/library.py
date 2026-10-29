@@ -11,7 +11,7 @@ import numpy as np
 
 from .features import DIM, FACETS, FACET_WEIGHTS
 
-HOME = Path(os.environ.get('DIGDEEPER_HOME', Path.home() / '.digdeeper'))
+HOME = Path(os.environ.get('SONAR_HOME', Path.home() / '.sonar'))
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS tracks (
@@ -75,7 +75,7 @@ class Library:
         """Vsaka nit (spletni zahtevki, opravila v ozadju) ima svojo povezavo do baze."""
         conn = getattr(self._local, 'conn', None)
         if conn is None:
-            conn = sqlite3.connect(self.home / 'digdeeper.db', timeout=30)
+            conn = sqlite3.connect(self.home / 'sonar.db', timeout=30)
             conn.row_factory = sqlite3.Row
             conn.execute('PRAGMA foreign_keys=ON')
             self._local.conn = conn

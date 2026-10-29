@@ -22,7 +22,7 @@ def create_app(lib=None):
     lib = lib or Library()
     jobs = Jobs(lib)
     dz = Deezer()
-    app = FastAPI(title='DigDeeper')
+    app = FastAPI(title='Sonar')
     app.state.lib, app.state.jobs = lib, jobs
 
     def results(hits):
