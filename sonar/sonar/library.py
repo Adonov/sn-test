@@ -167,6 +167,10 @@ class Library:
 
     # ---------- komadi ----------
 
+    def find_id(self, source, source_id):
+        row = self.db.execute('SELECT id FROM tracks WHERE source=? AND source_id=?', (source, str(source_id))).fetchone()
+        return row[0] if row else None
+
     def has(self, source, source_id):
         return self.db.execute('SELECT 1 FROM tracks WHERE source=? AND source_id=?', (source, str(source_id))).fetchone() is not None
 

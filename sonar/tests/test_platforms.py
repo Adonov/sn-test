@@ -149,3 +149,35 @@ def test_bandcamp_fan_api():
     assert [i['url'] for i in items] == ['https://x.bandcamp.com/album/a', 'https://y.bandcamp.com/track/b']
     assert items[0]['cover'] == 'https://f4.bcbits.com/img/a5_10.jpg'
     assert posts[0]['fan_id'] == 42 and posts[1]['older_than_token'] == 't2'
+
+
+def test_online_search_and_dig(site, tmp_path, monkeypatch):
+    from sonar import deezer
+
+    def track(i, artist):
+        return {'id': 500 + i, 'title': f'Web {i}', 'preview': f'{site}/{i}.wav', 'duration': 360, 'readable': True,
+                'artist': artist, 'album': {'title': 'EP', 'cover_medium': 'http://img/w.jpg'}}
+
+    traumer, other = {'id': 7, 'name': 'Traumer'}, {'id': 8, 'name': 'Friend'}
+    responses = {
+        '/search': {'data': [track(0, traumer), track(1, traumer)]},
+        '/track/500': track(0, traumer),
+        '/artist/7': traumer,
+        '/artist/7/top': {'data': [track(1, traumer), track(2, traumer)]},
+        '/artist/7/related': {'data': [other]},
+        '/artist/8/top': {'data': [track(3, other)]},
+        '/artist/8/related': {'data': []},
+    }
+    monkeypatch.setattr(deezer.Deezer, 'get', lambda self, path, **kw: responses[path])
+    client = TestClient(create_app(Library(tmp_path / 'home2')))
+
+    found = client.get('/api/online/search', params={'q': 'traumer'}).json()
+    assert [t['title'] for t in found] == ['Web 0', 'Web 1'] and found[0]['id'] is None and found[0]['artist'] == 'Traumer'
+
+    dug = client.post('/api/online/dig', json={'deezer_id': 500}).json()
+    assert client.get(f'/api/tracks/{dug["id"]}').json()['title'] == 'Web 0'
+    job = wait_job(client, dug['job'])
+    assert job['status'] == 'done' and job['added'] == 3, job  # Web 1, Web 2 in Web 3 od sorodnega izvajalca
+    similar = client.get(f'/api/tracks/{dug["id"]}/similar').json()['results']
+    assert {t['title'] for t in similar} == {'Web 1', 'Web 2', 'Web 3'}
+    assert client.get('/api/online/search', params={'q': 'traumer'}).json()[0]['id'] == dug['id']
