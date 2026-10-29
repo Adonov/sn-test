@@ -69,20 +69,53 @@ def _entry(info, url, parent=None):
             'id': str(info.get('id') or url), 'url': info.get('webpage_url') or url, **m}
 
 
+# YouTube pogosto zavrne prenos ("The page needs to be reloaded", "Sign in to confirm you're not a bot").
+# Takrat poskusimo druge odjemalce in nazadnje piškotke iz brskalnika, v katerem je uporabnik prijavljen.
+YOUTUBE_FALLBACKS = [
+    {},
+    {'extractor_args': {'youtube': {'player_client': ['tv', 'web_safari']}}},
+    {'extractor_args': {'youtube': {'player_client': ['mweb', 'android_vr']}}},
+    *({'cookiesfrombrowser': (browser,)} for browser in ('chrome', 'safari', 'firefox', 'brave', 'edge')),
+]
+YOUTUBE_HINT = ('YouTube blocked the download. Open youtube.com in Chrome or Safari while logged in and try again, '
+                'or pick the same set on SoundCloud.')
+
+
+def is_youtube(url):
+    return bool(re.search(r'(youtube\.com|youtu\.be|ytsearch)', url or ''))
+
+
+def _extract(url, opts, download):
+    """extract_info z rezervnimi možnostmi za YouTube; vrne (info, pot ali None)."""
+    variants = YOUTUBE_FALLBACKS if is_youtube(url) else [{}]
+    first_error = None
+    for extra in variants:
+        try:
+            with yt_dlp.YoutubeDL({**opts, **extra}) as ydl:
+                info = ydl.extract_info(url, download=download)
+                path = None
+                if download and info is not None:
+                    if info.get('requested_downloads'):
+                        path = info['requested_downloads'][0]['filepath']
+                    else:
+                        path = ydl.prepare_filename(info)
+                return info, path
+        except Exception as e:  # noqa: BLE001 – brskalnik brez piškotkov ali zavrnjen odjemalec: naslednja možnost
+            first_error = first_error or e
+            if not is_youtube(url):
+                raise
+    raise RuntimeError(f'{YOUTUBE_HINT} ({first_error})')
+
+
 def download(url, dest_dir, max_seconds=None):
     """Prenese zvok (najboljša zvočna kakovost) in vrne (pot, meta, source, id)."""
     Path(dest_dir).mkdir(parents=True, exist_ok=True)
     opts = {**BASE, 'format': 'bestaudio/best', 'noplaylist': True, 'outtmpl': str(Path(dest_dir) / '%(extractor)s-%(id)s.%(ext)s')}
     if max_seconds:
         opts['match_filter'] = yt_dlp.utils.match_filter_func([f'duration < {max_seconds}', '!duration'])
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        if info is None or not info.get('requested_downloads'):
-            path = ydl.prepare_filename(info) if info else None
-            if not path or not Path(path).exists():
-                raise ValueError('Predolgo za komad (verjetno miks) ali ni zvoka')
-        else:
-            path = info['requested_downloads'][0]['filepath']
+    info, path = _extract(url, opts, download=True)
+    if info is None or not path or not Path(path).exists():
+        raise ValueError('Predolgo za komad (verjetno miks) ali ni zvoka')
     return path, meta(info), _source(info), str(info.get('id'))
 
 
@@ -92,8 +125,7 @@ def is_link(text):
 
 def stream(url):
     """Sveža povezava do zvoka za predvajanje (povezave potečejo) in HTTP glave, ki jih potrebuje."""
-    with yt_dlp.YoutubeDL({**BASE, 'format': 'bestaudio/best', 'noplaylist': True}) as ydl:
-        info = ydl.extract_info(url, download=False)
+    info, _ = _extract(url, {**BASE, 'format': 'bestaudio/best', 'noplaylist': True}, download=False)
     return info['url'], info.get('http_headers') or {}
 
 
