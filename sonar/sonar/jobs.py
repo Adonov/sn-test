@@ -5,6 +5,7 @@ Računanje prstnih odtisov teče v več procesih hkrati (vsa jedra razen enega).
 import itertools
 import multiprocessing
 import os
+import re
 import shutil
 import tempfile
 import threading
@@ -31,7 +32,8 @@ _pool_lock = threading.Lock()
 def pool():
     global _pool
     with _pool_lock:
-        if _pool is None:
+        # sesuti proces pokvari celoten bazen – takrat ustvarimo novega, da uvoz teče naprej
+        if _pool is None or getattr(_pool, '_broken', False):
             workers = int(os.environ.get('SONAR_WORKERS') or max(1, (os.cpu_count() or 2) - 1))
             _pool = ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context('spawn'))
         return _pool
@@ -77,6 +79,23 @@ def _link_worker(url):
         return None, None, str(e)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+ANSI = re.compile(r'\x1b\[[0-9;]*m|\[[0-9;]*m')
+
+
+def clean(msg):
+    return ANSI.sub('', str(msg)).replace('ERROR: ', '').strip()
+
+
+def friendly(e):
+    """Razumljivejša sporočila za najpogostejše napake s platform."""
+    msg = clean(e)
+    if '[soundcloud:user]' in msg and '404' in msg:
+        return 'SoundCloud user not found – use the name from your profile address soundcloud.com/<name>'
+    if '[mixcloud' in msg and '404' in msg:
+        return 'Mixcloud user not found – use the name from mixcloud.com/<name>'
+    return msg
 
 
 PLATFORMS = {'bandcamp': 'Bandcamp', 'soundcloud': 'SoundCloud', 'youtube': 'YouTube', 'discogs': 'Discogs', 'mixcloud': 'Mixcloud'}
@@ -151,11 +170,11 @@ class Harvest:
                 else:  # (id, rezultat, napaka)
                     _, res, err = fut.result()
             except Exception as e:  # noqa: BLE001
-                res, err = None, str(e)
+                res, err = None, f'analiza se je sesula ({type(e).__name__})'
             if err or res is None:
                 self.job['failed'] += 1
                 if len(self.job['errors']) < 200:
-                    self.job['errors'].append(f'{meta.get("title") or key[1]}: {err}')
+                    self.job['errors'].append(f'{meta.get("title") or key[1]}: {clean(err)}')
                 continue
             self.lib.add_track(*key, res['vec'], bpm=res['bpm'], key=res['key'], camelot=res['camelot'], owned=self.owned,
                                **{k: meta.get(k) for k in META_KEYS})
@@ -198,7 +217,7 @@ class Jobs:
                 job['status'] = 'cancelled' if job['cancel'] else 'done'
             except Exception as e:  # noqa: BLE001
                 traceback.print_exc()
-                job['status'], job['message'] = 'error', str(e)
+                job['status'], job['message'] = 'error', friendly(e)
             job['finished'] = time.time()
 
         executor.submit(run)
@@ -294,7 +313,7 @@ class Jobs:
                 else:
                     deezer_tracks(dz.pages('/search', limit=max_tracks, q=value))
             except Exception as e:  # noqa: BLE001 – ena slaba vrstica ne ustavi ostalih
-                job['errors'].append(f'{line}: {e}')
+                job['errors'].append(f'{line}: {clean(e)}')
             h.drain()
 
         # Deezer izvajalci: najbolj poslušani komadi, nato sorodni izvajalci
@@ -310,7 +329,7 @@ class Jobs:
                     for r in dz.related(a['id']):
                         queue_artist(r)
             except Exception as e:  # noqa: BLE001
-                job['errors'].append(f'{a.get("name")}: {e}')
+                job['errors'].append(f'{a.get("name")}: {clean(e)}')
             h.drain()
         h.finish()
         job['message'] = f'finished · {len(artists)} artists' if artists else 'finished'
@@ -330,7 +349,7 @@ class Jobs:
                     for e in links.list_entries(item['url'], limit=100):
                         h.link(e, {'cover': item['cover'], 'artist': item['artist']})
                 except Exception as e:  # noqa: BLE001
-                    job['errors'].append(f'{item["url"]}: {e}')
+                    job['errors'].append(f'{item["url"]}: {clean(e)}')
                 h.drain()
         elif platform in ('soundcloud', 'youtube', 'mixcloud'):
             for e in links.list_entries(connection_url(platform, handle), limit=max_tracks):
@@ -354,7 +373,7 @@ class Jobs:
                                 t.setdefault('album', {'title': r['title'], 'cover_medium': r['cover']})
                                 h.preview('deezer', t['id'], t.get('preview'), track_meta(t))
                 except Exception as e:  # noqa: BLE001
-                    job['errors'].append(f'{r["title"]}: {e}')
+                    job['errors'].append(f'{r["title"]}: {clean(e)}')
                 h.drain()
         else:
             raise ValueError(f'Neznana platforma: {platform}')
