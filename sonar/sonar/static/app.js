@@ -457,8 +457,11 @@ async function homePage() {
 }
 
 function linkForm() {
-  return `<form class="link-form" onsubmit="event.preventDefault(); window.analyzeLink(this.url.value)">
-    <input type="text" name="url" placeholder="…or paste a SoundCloud, Mixcloud, YouTube or Bandcamp link to a set or track" required>
+  return `<form class="link-form">
+    <div class="link-box">
+      <input type="text" name="url" autocomplete="off" placeholder="Search a DJ set (e.g. Traumer) or paste a SoundCloud, Mixcloud, YouTube or Bandcamp link" required>
+      <div class="set-results" hidden></div>
+    </div>
     <button class="chip-btn primary">Dig</button>
   </form>`
 }
@@ -471,6 +474,60 @@ window.analyzeLink = async (url) => {
     toast(err.message)
   }
 }
+
+const isUrl = (v) => /^https?:\/\//i.test(v)
+const fmtLong = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}m` : `${Math.round(s / 60)} min`)
+
+async function searchSets(form, q) {
+  const box = form.querySelector('.set-results')
+  const seq = (form._seq = (form._seq || 0) + 1)
+  box.hidden = false
+  box.innerHTML = '<div class="hint" style="padding:12px">Searching YouTube and SoundCloud for sets…</div>'
+  try {
+    const sets = await api(`/api/online/sets?q=${encodeURIComponent(q)}`)
+    if (seq !== form._seq) return
+    box.innerHTML = sets.length
+      ? sets.map((r) => `<button type="button" class="set-hit" data-set-url="${esc(r.url)}">
+          <img src="${esc(r.cover || fallbackCover(r.url))}" alt="" loading="lazy">
+          <div style="min-width:0"><div class="t">${esc(r.title)}</div>
+            <div class="label">${esc(r.artist || '')}${r.duration ? ` · ${fmtLong(r.duration)}` : ''}</div></div>
+          ${platformIcon(r.source, 20)}
+        </button>`).join('')
+      : '<div class="hint" style="padding:12px">No sets found – try another name or paste a link.</div>'
+  } catch (err) {
+    if (seq === form._seq) box.innerHTML = `<div class="hint" style="padding:12px">Search failed: ${esc(err.message)}</div>`
+  }
+}
+
+document.addEventListener('submit', (e) => {
+  const form = e.target.closest('.link-form')
+  if (!form) return
+  e.preventDefault()
+  const v = form.url.value.trim()
+  if (isUrl(v)) window.analyzeLink(v)
+  else if (v) searchSets(form, v)
+})
+document.addEventListener('input', (e) => {
+  const form = e.target.closest('.link-form')
+  if (!form) return
+  clearTimeout(form._timer)
+  const v = e.target.value.trim()
+  if (v.length < 2 || isUrl(v)) {
+    form.querySelector('.set-results').hidden = true
+    return
+  }
+  form._timer = setTimeout(() => searchSets(form, v), 600)
+})
+document.addEventListener('click', (e) => {
+  const hit = e.target.closest('[data-set-url]')
+  if (hit) {
+    hit.disabled = true
+    hit.querySelector('.label').textContent = 'Downloading the set…'
+    window.analyzeLink(hit.dataset.setUrl)
+    return
+  }
+  if (!e.target.closest('.link-form')) document.querySelectorAll('.set-results').forEach((b) => (b.hidden = true))
+})
 
 function analysisCard(a, extra = '') {
   const status = a.status === 'done'
