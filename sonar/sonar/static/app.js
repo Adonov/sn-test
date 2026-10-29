@@ -859,8 +859,9 @@ async function collectionPage() {
     try {
       if (f.token?.value) await api('/api/settings', { json: { discogs_token: f.token.value } })
       await api(`/api/connections/${platform}`, { json: { handle: f.handle.value.trim() } })
-      toast(`Syncing ${PLATFORMS[platform].name}…`)
+      toast(`Syncing ${PLATFORMS[platform].name}… progress is shown below`)
       watchJobs()
+      setTimeout(() => $('#jobs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 600)
     } catch (err) { toast(err.message) }
   }))
   view.querySelectorAll('[data-disconnect]').forEach((b) => b.addEventListener('click', async () => {

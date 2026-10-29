@@ -4,7 +4,8 @@ from pathlib import Path
 
 import yt_dlp
 
-BASE = {'quiet': True, 'no_warnings': True, 'noprogress': True, 'socket_timeout': 30, 'ignoreerrors': False}
+BASE = {'quiet': True, 'no_warnings': True, 'noprogress': True, 'socket_timeout': 30, 'ignoreerrors': False,
+        'color': {'stdout': 'no_color', 'stderr': 'no_color'}}
 MAX_TRACK_SECONDS = 15 * 60  # daljše so miksi/seti – v katalog gredo samo komadi
 # vsebniki, v katere vstopimo (profil → albumi → komadi)
 CONTAINER_HINT = re.compile(r'(tab|playlist|user|album|set|related|search)', re.I)

@@ -30,7 +30,11 @@ def main():
     c.add_argument('--per-artist', type=int, default=10)
     c.add_argument('--no-related', action='store_true', help='ne sledi sorodnim izvajalcem')
     sub.add_parser('stats', help='velikost kataloga')
+    sub.add_parser('doctor', help='preveri, ali analiza zvoka deluje na tem računalniku')
     args = ap.parse_args()
+
+    if args.cmd == 'doctor':
+        return doctor()
 
     from .library import Library
     if args.cmd in (None, 'serve'):
@@ -55,6 +59,34 @@ def main():
         _wait(jobs.import_folder(args.folder))
     elif args.cmd == 'crawl':
         _wait(jobs.crawl_deezer(args.seeds, args.max, args.per_artist, not args.no_related))
+
+
+def doctor():
+    """Analizira testni ton v tem procesu; ob sesutju faulthandler izpiše, kje se je zgodilo."""
+    import faulthandler
+    import platform
+    import subprocess
+    import tempfile
+    faulthandler.enable()
+    import librosa
+    import numba
+    import numpy
+    import yt_dlp
+    print(f'Python {platform.python_version()} · {platform.machine()} · numpy {numpy.__version__} · '
+          f'numba {numba.__version__} · librosa {librosa.__version__} · yt-dlp {yt_dlp.version.__version__}')
+    with tempfile.TemporaryDirectory() as tmp:
+        wav = f'{tmp}/test.wav'
+        subprocess.run(['ffmpeg', '-v', 'quiet', '-f', 'lavfi', '-i', 'sine=frequency=110:duration=40',
+                        '-f', 'lavfi', '-i', 'anoisesrc=d=40:a=0.1', '-filter_complex', 'amix=inputs=2', wav], check=True)
+        from .features import analyze_file
+        print('Analiza v tem procesu …', flush=True)
+        res = analyze_file(wav)
+        print(f'  OK (BPM {res["bpm"]})', flush=True)
+        from .jobs import _track_worker, pool
+        print('Analiza v delovnem procesu …', flush=True)
+        _, _, res, err = pool().submit(_track_worker, wav).result()
+        print(f'  {"NAPAKA: " + err if err else "OK"}', flush=True)
+    print('Vse deluje.')
 
 
 if __name__ == '__main__':

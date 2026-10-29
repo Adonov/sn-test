@@ -40,10 +40,40 @@ def fold_bpm(bpm):
     return float(bpm)
 
 
+# Opomba: librosa.autocorrelate, feature.tempo in ocena uglasitve v chroma_stft gredo skozi numbo,
+# ki se na nekaterih različicah (npr. numba 0.68 na Apple M) sesuje. Zato jih računamo z numpy.
+
+def autocorrelate(x, max_size):
+    """Avtokorelacija prek FFT (enako kot librosa.autocorrelate, brez numbe)."""
+    n = len(x)
+    spec = np.fft.rfft(x, n=2 * n)
+    ac = np.fft.irfft(spec.real ** 2 + spec.imag ** 2)[:n]
+    return ac[:max_size]
+
+
+def estimate_bpm(onset, sr, start_bpm=125.0, std_bpm=2.0):
+    """Tempo iz avtokorelacije ovojnice z log-normalno pričakovano vrednostjo okoli start_bpm (kot librosa)."""
+    win = min(len(onset), 384)  # ~9 s oken, kot librosa.feature.tempogram
+    acs = []
+    for start in range(0, len(onset) - win + 1, 32):
+        seg = onset[start:start + win] * np.hanning(win)
+        ac = autocorrelate(seg, win)
+        acs.append(ac / (np.abs(ac).max() + EPS))
+    ac = np.maximum(np.mean(acs, axis=0), 0)
+    lags = np.arange(1, len(ac))
+    bpms = 60.0 * sr / (HOP * lags)
+    ok = (bpms >= 30) & (bpms <= 320)
+    if not ok.any():
+        return 0.0
+    prior = -0.5 * ((np.log2(bpms[ok]) - np.log2(start_bpm)) / std_bpm) ** 2
+    score = np.log1p(1e6 * ac[1:][ok]) + prior
+    return float(bpms[ok][np.argmax(score)])
+
+
 def _beat_lags(env, period, steps=16):
     """Avtokorelacija ovojnice na šestnajstinkah takta – vzorec groova, neodvisen od tempa."""
     env = env - env.mean()
-    ac = librosa.autocorrelate(env, max_size=int(period * 4.5) + 2)
+    ac = autocorrelate(env, int(period * 4.5) + 2)
     ac = ac / (ac[0] + EPS)
     lags = period * np.arange(1, steps + 1) / 4
     return np.interp(lags, np.arange(len(ac)), ac)
@@ -62,11 +92,11 @@ def clip_features(y, sr=SR):
 
     # rhythm
     onset = librosa.onset.onset_strength(S=logmel, sr=sr)
-    bpm = fold_bpm(librosa.feature.tempo(onset_envelope=onset, sr=sr, hop_length=HOP, start_bpm=125, std_bpm=2)[0])
+    bpm = fold_bpm(estimate_bpm(onset, sr))
     period = 60 / (bpm or 120) * sr / HOP
     groove = _beat_lags(onset, period)
     perc_ratio = P.sum() / (H.sum() + P.sum() + EPS)
-    # vrhovi ovojnice namesto librosa.onset.onset_detect (ta gre skozi numbo, ki se na nekaterih različicah sesuje)
+    # vrhovi ovojnice namesto librosa.onset.onset_detect (gre skozi numbo)
     onsets, _ = find_peaks(onset, height=onset.mean() + 0.5 * onset.std(), distance=3)
     density = len(onsets) / (len(y) / sr)
     rhythm = np.concatenate([groove, [np.log2((bpm or 120) / 120), perc_ratio, np.log1p(density), onset.std() / (onset.mean() + EPS)]])
@@ -94,7 +124,7 @@ def clip_features(y, sr=SR):
     ])
 
     # atmosphere
-    chroma = librosa.feature.chroma_stft(S=H ** 2, sr=sr).mean(1)
+    chroma = librosa.feature.chroma_stft(S=H ** 2, sr=sr, tuning=0.0).mean(1)
     cm = chroma / (chroma.sum() + EPS)
     entropy = -(cm * np.log(cm + EPS)).sum()
     maj = max(np.corrcoef(np.roll(MAJOR, k), cm)[0, 1] for k in range(12))
