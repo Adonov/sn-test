@@ -1,18 +1,19 @@
 """HTTP API in spletni vmesnik."""
 import re
+import subprocess
 import uuid
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import audio
+from . import audio, links
 from .deezer import Deezer
-from .jobs import Jobs
+from .jobs import PLATFORMS, Jobs
 from .library import Library, _norm_name
 
 STATIC = Path(__file__).parent / 'static'
@@ -40,11 +41,11 @@ def create_app(lib=None):
     @app.get('/api/stats')
     def stats():
         return {**lib.counts(), 'liked': len(lib.find_tracks(liked=True, limit=100000)),
-                'sets': len(lib.analyses('set'))}
+                'owned': lib.counts_owned(), 'sets': len(lib.analyses('set'))}
 
     @app.get('/api/tracks')
-    def find_tracks(q: str = '', liked: bool = False, saved: bool = False, limit: int = 50, offset: int = 0):
-        return [public(t) for t in lib.find_tracks(q, liked, saved, min(limit, 500), offset)]
+    def find_tracks(q: str = '', liked: bool = False, saved: bool = False, owned: bool = False, limit: int = 50, offset: int = 0):
+        return [public(t) for t in lib.find_tracks(q, liked, saved, min(limit, 500), offset, owned)]
 
     @app.get('/api/tracks/{tid}')
     def get_track(tid: int):
@@ -68,10 +69,31 @@ def create_app(lib=None):
         return public(lib.track(tid))
 
     @app.get('/api/tracks/{tid}/audio')
-    def track_audio(tid: int):
+    def track_audio(tid: int, start: float = 0):
         t = need(lib.track(tid))
         if t['path']:
             return FileResponse(t['path'])
+        if streamed(t):
+            # SoundCloud, YouTube, Bandcamp …: zvok pretakamo skozi ffmpeg (deluje tudi za HLS in zaščitene povezave)
+            try:
+                url, headers = links.stream(t['link'])
+            except Exception as e:  # noqa: BLE001
+                raise HTTPException(502, f'Platforma ni vrnila zvoka: {e}')
+            cmd = ['ffmpeg', '-v', 'quiet', '-nostdin']
+            if headers:
+                cmd += ['-headers', ''.join(f'{k}: {v}\r\n' for k, v in headers.items())]
+            if start > 0:
+                cmd += ['-ss', f'{start:.1f}']
+            proc = subprocess.Popen(cmd + ['-i', url, '-vn', '-f', 'mp3', '-b:a', '192k', '-'], stdout=subprocess.PIPE)
+
+            def chunks():
+                try:
+                    while chunk := proc.stdout.read(1 << 16):
+                        yield chunk
+                finally:
+                    proc.kill()
+
+            return StreamingResponse(chunks(), media_type='audio/mpeg')
         if t['source'] == 'deezer':
             # povezave do predposlušanj potečejo, zato vsakič vprašamo za svežo
             url = dz.preview_url(t['source_id'])
@@ -102,6 +124,18 @@ def create_app(lib=None):
                 f.write(chunk)
         aid = lib.create_analysis('pending', Path(file.filename).stem, dest)
         jobs.analyze(aid)
+        return analysis_public(lib.analysis(aid))
+
+    class LinkUpload(BaseModel):
+        url: str
+
+    @app.post('/api/analyses/link')
+    def upload_link(body: LinkUpload):
+        url = body.url.strip()
+        if not url.startswith('http'):
+            raise HTTPException(400, 'Prilepi povezavo, ki se začne s http')
+        aid = lib.create_analysis('pending', url, '')
+        jobs.analyze_link(aid, url)
         return analysis_public(lib.analysis(aid))
 
     @app.get('/api/analyses')
@@ -240,10 +274,61 @@ def create_app(lib=None):
 
     @app.post('/api/import/deezer')
     def import_deezer(body: DeezerImport):
-        seeds = [s for s in body.seeds if s.strip()]
-        if not seeds:
-            raise HTTPException(400, 'Vpiši vsaj enega izvajalca, žanr ali povezavo')
-        return jobs.crawl_deezer(seeds, max(1, min(body.max_tracks, 100000)), max(1, min(body.per_artist, 100)), body.related)
+        return import_sources(SourcesImport(lines=body.seeds, max_tracks=body.max_tracks, per_artist=body.per_artist, related=body.related))
+
+    class SourcesImport(BaseModel):
+        lines: list[str]
+        search_on: str = 'deezer'
+        max_tracks: int = 1000
+        per_artist: int = 10
+        related: bool = True
+
+    @app.post('/api/import/sources')
+    def import_sources(body: SourcesImport):
+        lines = [s.strip() for s in body.lines if s.strip()]
+        if not lines:
+            raise HTTPException(400, 'Vpiši vsaj enega izvajalca, iskanje ali povezavo')
+        if body.search_on not in ('deezer', 'youtube', 'soundcloud'):
+            raise HTTPException(400, 'Iskanje je možno na Deezerju, YouTubu ali SoundCloudu')
+        return jobs.import_sources(lines, body.search_on, max(1, min(body.max_tracks, 100000)), max(1, min(body.per_artist, 100)), body.related)
+
+    # ---------- povezane zbirke ----------
+
+    class Connect(BaseModel):
+        handle: str
+        max_tracks: int = 2000
+
+    @app.get('/api/connections')
+    def connections():
+        conns = lib.connections()
+        return [{'platform': p, 'name': name, 'handle': conns.get(p, {}).get('handle'), 'synced': conns.get(p, {}).get('synced')}
+                for p, name in PLATFORMS.items()]
+
+    @app.post('/api/connections/{platform}')
+    def connect(platform: str, body: Connect):
+        if platform not in PLATFORMS:
+            raise HTTPException(404, 'Neznana platforma')
+        if not body.handle.strip():
+            raise HTTPException(400, 'Vpiši uporabniško ime ali povezavo')
+        return jobs.connect(platform, body.handle.strip(), max(1, min(body.max_tracks, 100000)))
+
+    @app.delete('/api/connections/{platform}')
+    def disconnect(platform: str):
+        lib.remove_connection(platform)
+        return {'ok': True}
+
+    class Settings(BaseModel):
+        discogs_token: Optional[str] = None
+
+    @app.get('/api/settings')
+    def get_settings():
+        return {'discogs_token': bool(lib.setting('discogs_token'))}
+
+    @app.post('/api/settings')
+    def save_settings(body: Settings):
+        if body.discogs_token is not None:
+            lib.set_setting('discogs_token', body.discogs_token.strip() or None)
+        return get_settings()
 
     @app.get('/api/jobs')
     def list_jobs():
@@ -262,7 +347,13 @@ def public(t):
     """Komad brez notranjih polj (pot do datoteke ostane na strežniku)."""
     t = {k: v for k, v in t.items() if k not in ('vec', 'path')}
     t['local'] = t.get('source') == 'local'
+    t['streamed'] = streamed(t)
     return t
+
+
+def streamed(t):
+    """Komadi s platform, ki jih predvajamo prek yt-dlp (brez shranjene datoteke)."""
+    return t.get('source') not in ('local', 'deezer') and bool(t.get('link')) and not t.get('path')
 
 
 def analysis_public(a):

@@ -6,6 +6,7 @@ tako da se podobni komadi najdejo tudi, če so v drugem ključu ali zmasterirani
 """
 import numpy as np
 import librosa
+from scipy.signal import find_peaks
 
 from .audio import SR, clip_offsets, load
 
@@ -65,7 +66,8 @@ def clip_features(y, sr=SR):
     period = 60 / (bpm or 120) * sr / HOP
     groove = _beat_lags(onset, period)
     perc_ratio = P.sum() / (H.sum() + P.sum() + EPS)
-    onsets = librosa.onset.onset_detect(onset_envelope=onset, sr=sr, hop_length=HOP)
+    # vrhovi ovojnice namesto librosa.onset.onset_detect (ta gre skozi numbo, ki se na nekaterih različicah sesuje)
+    onsets, _ = find_peaks(onset, height=onset.mean() + 0.5 * onset.std(), distance=3)
     density = len(onsets) / (len(y) / sr)
     rhythm = np.concatenate([groove, [np.log2((bpm or 120) / 120), perc_ratio, np.log1p(density), onset.std() / (onset.mean() + EPS)]])
 
@@ -85,7 +87,7 @@ def clip_features(y, sr=SR):
     cent = librosa.feature.spectral_centroid(S=S, sr=sr) / nyq
     bw = librosa.feature.spectral_bandwidth(S=S, sr=sr) / nyq
     roll = librosa.feature.spectral_rolloff(S=S, sr=sr) / nyq
-    zcr = librosa.feature.zero_crossing_rate(y, hop_length=HOP)
+    zcr = np.mean(np.signbit(y[1:]) != np.signbit(y[:-1]))
     texture = np.concatenate([
         mfcc.mean(1), mfcc.std(1), contrast.mean(1), contrast.std(1),
         [flat.mean(), flat.std(), cent.mean(), cent.std(), bw.mean(), roll.mean(), zcr.mean()],

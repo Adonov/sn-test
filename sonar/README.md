@@ -6,7 +6,7 @@ ne kreditov.
 
 ## Zagon
 
-Potrebuješ Python 3.10+ in ffmpeg (na Macu `brew install ffmpeg`).
+Potrebuješ Python 3.10+, ffmpeg in za YouTube še deno (na Macu `brew install ffmpeg deno`).
 
 ```bash
 cd sonar
@@ -18,14 +18,27 @@ Podatki so v `~/.sonar` (drugo mapo nastaviš z `SONAR_HOME=/pot ./start.sh`).
 
 ## Najprej zgradi katalog
 
-Plačljiva storitev išče po 11 milijonih komadov. Tukaj je katalog tvoj in ga zgradiš v zavihku **Collection**:
+Plačljive storitve iščejo po milijonih komadov. Tukaj je katalog tvoj in ga zgradiš v zavihku **Collection**:
 
-1. **Tvoja glasba** – vpiši pot do mape (npr. Rekordbox/Serato/Traktor knjižnica). Vsak komad dobi prstni odtis,
-   datoteke ne zapustijo računalnika. Zadetki iz tvoje knjižnice so označeni z **IN YOUR LIBRARY**.
-2. **Deezer predposlušanja** – vpiši izvajalce, ki jih rad vrtiš (vsakega v svojo vrstico). Program vzame
-   njihove najbolj poslušane komade, sledi sorodnim izvajalcem in analizira 30-sekundna predposlušanja.
-   Deluje tudi `label:Innervisions`, `q:minimal house` ali povezava do Deezer playliste/albuma.
-   Deezer API je javen in ne potrebuje ključa.
+1. **Connect collection** – poveži svoje račune. Sonar prebere javno zbirko, analizira vsak komad in ga označi
+   z **IN YOUR COLLECTION**. Gumb *Sync* kasneje doda nove komade.
+   - **Bandcamp** – uporabniško ime (bandcamp.com/*ime*): vsa kupljena glasba.
+   - **SoundCloud** – uporabniško ime (tvoji všečki) ali povezava do profila/playliste.
+   - **YouTube** – povezava do javne playliste ali kanala.
+   - **Discogs** – uporabniško ime: plošče iz tvoje zbirke prek YouTube posnetkov, ki so pripeti k izdajam
+     (če jih ni, isti album z Deezerja). Za zasebno zbirko vpiši še
+     [osebni token](https://www.discogs.com/settings/developers).
+   - **Mixcloud** – uporabniško ime: komadi iz priljubljenih.
+2. **Tvoja glasba** – pot do mape na računalniku (npr. Rekordbox/Serato/Traktor knjižnica). Datoteke ne zapustijo
+   računalnika.
+3. **Discover** – razširi katalog s česarkoli, vsako v svojo vrstico:
+   - ime izvajalca: najbolj poslušani komadi z Deezerja in sorodni izvajalci (ali iskanje na SoundCloudu/YouTubu),
+   - `label:Innervisions`, `q:minimal house`,
+   - povezava do komada, playliste, profila, založbe ali albuma na SoundCloudu, YouTubu, Bandcampu, Mixcloudu,
+     Beatportu, Audiomacku ali Deezerju.
+
+Miksi, daljši od 15 minut, ne gredo v katalog. Sete analiziraš na strani **Sets**: spusti datoteko ali prilepi
+povezavo (SoundCloud, Mixcloud, YouTube …).
 
 Hitrost je približno 1 komad na sekundo na jedro procesorja, torej 10.000 komadov v slabi uri na 8 jedrih.
 Isto lahko poženeš iz ukazne vrstice:
@@ -72,6 +85,11 @@ v 30-sekundnih oknih, ki jih združujemo, dokler ne ostane približno en odsek n
   groove in zvok, ne razumejo pa »vibe-a« tako dobro kot velik model, naučen na milijonih komadov.
 - *TRACK ID FOUND* ni pravo prepoznavanje (kot Shazam), ampak zelo visoka podobnost.
 - Deezer predposlušanja so za osebno rabo. Javno objavljanje tega kataloga ni dovoljeno.
+- Glasbo s SoundClouda, YouTuba, Bandcampa in Mixclouda bere [yt-dlp](https://github.com/yt-dlp/yt-dlp). Datoteke
+  se po analizi zbrišejo, predvajanje gre v živo s platforme. Platforme pogosto spreminjajo strani, zato `start.sh`
+  ob vsakem zagonu posodobi yt-dlp. Uporaba je na tvojo odgovornost in v skladu s pogoji posamezne platforme.
+- Spotify, Apple Music in Beatport ne dajo zvoka zunanjim programom (Beatport le posamezne komade), zato tam
+  zbirke ni mogoče povezati.
 
 ## Testi
 
