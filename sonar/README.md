@@ -1,6 +1,6 @@
-# DigDeeper (brezplačna različica)
+# Sonar
 
-Iskalnik podobnih komadov za DJ-je po vzoru [digdeeper.fm](https://digdeeper.fm). Spustiš komad ali cel DJ set,
+Iskalnik podobnih komadov za DJ-je. Spustiš komad ali cel DJ set,
 program posluša dejanski zvok in najde najbolj podobne komade. Teče na tvojem računalniku, zato ni naročnine
 ne kreditov.
 
@@ -9,12 +9,12 @@ ne kreditov.
 Potrebuješ Python 3.10+ in ffmpeg (na Macu `brew install ffmpeg`).
 
 ```bash
-cd digdeeper
+cd sonar
 ./start.sh
 ```
 
 Prvi zagon namesti knjižnice (nekaj minut), nato se odpre `http://localhost:8765`.
-Podatki so v `~/.digdeeper` (drugo mapo nastaviš z `DIGDEEPER_HOME=/pot ./start.sh`).
+Podatki so v `~/.sonar` (drugo mapo nastaviš z `SONAR_HOME=/pot ./start.sh`).
 
 ## Najprej zgradi katalog
 
@@ -31,8 +31,8 @@ Hitrost je približno 1 komad na sekundo na jedro procesorja, torej 10.000 komad
 Isto lahko poženeš iz ukazne vrstice:
 
 ```bash
-.venv/bin/python -m digdeeper import ~/Music/DJ
-.venv/bin/python -m digdeeper crawl "Octave" "Ricardo Villalobos" "label:Perlon" --max 5000
+.venv/bin/python -m sonar import ~/Music/DJ
+.venv/bin/python -m sonar crawl "Octave" "Ricardo Villalobos" "label:Perlon" --max 5000
 ```
 
 ## Kaj zna
@@ -52,7 +52,7 @@ Isto lahko poženeš iz ukazne vrstice:
 ## Kako deluje
 
 Iz vsakega komada vzamemo tri 30-sekundne izseke iz sredine in izračunamo ~120 zvočnih značilk
-(`digdeeper/features.py`):
+(`sonar/features.py`):
 
 | skupina    | kaj meri                                                                    |
 |------------|------------------------------------------------------------------------------|

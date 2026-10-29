@@ -6,10 +6,10 @@ import time
 
 import pytest
 
-from digdeeper import deezer
-from digdeeper.deezer import parse_seed
-from digdeeper.jobs import Jobs
-from digdeeper.library import Library
+from sonar import deezer
+from sonar.deezer import parse_seed
+from sonar.jobs import Jobs
+from sonar.library import Library
 from synth import make_track, write
 
 

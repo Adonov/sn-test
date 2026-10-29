@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prvi zagon namesti vse potrebno, nato odpre DigDeeper v brskalniku.
+# Prvi zagon namesti vse potrebno, nato odpre Sonar v brskalniku.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -12,4 +12,4 @@ if [ ! -d .venv ]; then
   .venv/bin/pip install --upgrade pip
   .venv/bin/pip install -r requirements.txt
 fi
-exec .venv/bin/python -m digdeeper "${@:-serve}"
+exec .venv/bin/python -m sonar "${@:-serve}"

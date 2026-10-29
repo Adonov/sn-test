@@ -1,4 +1,4 @@
-"""Ukazna vrstica: python -m digdeeper [serve|import|crawl|stats]."""
+"""Ukazna vrstica: python -m sonar [serve|import|crawl|stats]."""
 import argparse
 import time
 import webbrowser
@@ -16,7 +16,7 @@ def _wait(job):
 
 
 def main():
-    ap = argparse.ArgumentParser(prog='digdeeper', description='Iskalnik podobnih komadov za DJ-je')
+    ap = argparse.ArgumentParser(prog='sonar', description='Iskalnik podobnih komadov za DJ-je')
     sub = ap.add_subparsers(dest='cmd')
     s = sub.add_parser('serve', help='zaženi spletni vmesnik (privzeto)')
     s.add_argument('--host', default='127.0.0.1')
@@ -39,7 +39,7 @@ def main():
         host = getattr(args, 'host', '127.0.0.1')
         port = getattr(args, 'port', 8765)
         url = f'http://{"localhost" if host in ("127.0.0.1", "0.0.0.0") else host}:{port}'
-        print(f'DigDeeper teče na {url}')
+        print(f'Sonar teče na {url}')
         if not getattr(args, 'no_browser', False):
             webbrowser.open(url)
         uvicorn.run(create_app(), host=host, port=port, log_level='warning')

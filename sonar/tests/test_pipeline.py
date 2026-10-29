@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from digdeeper.features import estimate_key
-from digdeeper.library import Library
-from digdeeper.server import create_app
+from sonar.features import estimate_key
+from sonar.library import Library
+from sonar.server import create_app
 from synth import STYLES, make_track, write
 
 

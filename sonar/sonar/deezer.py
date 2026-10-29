@@ -17,7 +17,7 @@ class Deezer:
 
     def __init__(self, per_second=8):
         self.http = requests.Session()
-        self.http.headers['User-Agent'] = 'DigDeeper/0.1 (personal use)'
+        self.http.headers['User-Agent'] = 'Sonar/0.1 (personal use)'
         self.min_gap = 1 / per_second
         self.last = 0.0
         self.lock = threading.Lock()

@@ -1,4 +1,4 @@
-// DigDeeper – vmesnik brez gradnje (vanilla JS moduli)
+// Sonar – vmesnik brez gradnje (vanilla JS moduli)
 
 const ICONS = {
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
@@ -424,7 +424,7 @@ async function homePage() {
     : `<div class="card demo-card">
         <span class="label">Step 1 · Build your catalog</span>
         <h3 style="font-size:26px;margin:16px 0 8px">Your catalog is empty</h3>
-        <p class="muted">DigDeeper compares sound against a catalog that lives on your computer. Add your own music folder
+        <p class="muted">Sonar compares sound against a catalog that lives on your computer. Add your own music folder
         (Rekordbox / Serato / Traktor library) and grow it with 30-second previews from Deezer – artists, labels, genres or playlists.</p>
         <div class="wave">${waveBars('empty')}</div>
         <a class="chip-btn primary" href="#/collection">Build catalog ${icon('arrowR')}</a>
@@ -433,9 +433,9 @@ async function homePage() {
   view.innerHTML = `
     <section class="hero">
       <div>
-        <div class="eyebrow">Similar-track finder for DJs</div>
-        <h1>Find new gems.<br>In seconds, not hours<span class="dot">.</span></h1>
-        <p class="lead">Drop a track or DJ set. We listen to the actual audio and find the 100 closest tracks.</p>
+        <div class="eyebrow">Sound-alike radar for DJs</div>
+        <h1>Play one track.<br>Hear what fits next<span class="dot">.</span></h1>
+        <p class="lead">Drop a track or a whole DJ set. Sonar pings your crate and brings back the closest-sounding tracks – ranked by groove, bass, texture and mood.</p>
         <div class="actions">
           <button class="btn" data-act="upload">Drop a track or set ${icon('arrowR')}</button>
           <a class="btn dark" href="#/collection">Connect collection</a>
@@ -603,7 +603,7 @@ function drawArt(canvas, seed) {
   let x = base + 3
   const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280)
   for (let k = 0; k < 4; k++) {
-    const cx = rnd() * w, cy = rnd() * h, col = [`hsl(${(base + 140) % 360},70%,55%)`, '#ff5a1f', '#f5d36b', `hsl(${(base + 300) % 360},50%,45%)`][k]
+    const cx = rnd() * w, cy = rnd() * h, col = [`hsl(${(base + 140) % 360},70%,55%)`, '#2fe0c0', '#f5d36b', `hsl(${(base + 300) % 360},50%,45%)`][k]
     for (let r = 20; r < w; r += 26) {
       ctx.beginPath()
       ctx.strokeStyle = col
