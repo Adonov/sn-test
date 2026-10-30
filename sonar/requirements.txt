@@ -6,4 +6,4 @@ fastapi>=0.110
 uvicorn>=0.29
 python-multipart>=0.0.9
 requests>=2.31
-yt-dlp>=2025.10.1
+yt-dlp[default,deno]>=2025.10.1  # yt-dlp-ejs + deno: brez njiju YouTube zavrne prenos

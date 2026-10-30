@@ -6,7 +6,7 @@ ne kreditov.
 
 ## Zagon
 
-Potrebuješ Python 3.10+, ffmpeg in za YouTube še deno (na Macu `brew install ffmpeg deno`).
+Potrebuješ Python 3.10+ in ffmpeg (na Macu `brew install ffmpeg`). Vse ostalo, tudi deno za YouTube, namesti `start.sh`.
 
 ```bash
 cd sonar
