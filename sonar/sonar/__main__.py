@@ -74,6 +74,13 @@ def doctor():
     import yt_dlp
     print(f'Python {platform.python_version()} · {platform.machine()} · numpy {numpy.__version__} · '
           f'numba {numba.__version__} · librosa {librosa.__version__} · yt-dlp {yt_dlp.version.__version__}')
+    try:
+        import yt_dlp_ejs  # noqa: F401 – rešuje YouTubove JavaScript izzive
+        runtimes = getattr(yt_dlp.YoutubeDL({'quiet': True}), '_js_runtimes', {})
+        ok = any(bool(v) for v in runtimes.values()) if runtimes else True
+        print('YouTube: OK (yt-dlp-ejs' + (' + deno)' if ok else ', ampak manjka deno – poženi bash start.sh)'))
+    except ImportError:
+        print('YouTube: manjka yt-dlp-ejs – poženi bash start.sh, da se namesti')
     with tempfile.TemporaryDirectory() as tmp:
         wav = f'{tmp}/test.wav'
         subprocess.run(['ffmpeg', '-v', 'quiet', '-f', 'lavfi', '-i', 'sine=frequency=110:duration=40',
